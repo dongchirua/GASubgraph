@@ -12,6 +12,7 @@ dependencies:
   - argon2-cffi-bindings=21.2.0=py39hb9d737c_2
   - asttokens=2.0.5=pyhd8ed1ab_0
   - attrs=21.4.0=pyhd8ed1ab_0
+  - autopep8=1.6.0=pyhd3eb1b0_1
   - babel=2.10.3=pyhd8ed1ab_0
   - backcall=0.2.0=pyh9f0ad1d_0
   - backports=1.0=py_2
@@ -144,6 +145,7 @@ dependencies:
   - psutil=5.9.1=py39hb9d737c_0
   - ptyprocess=0.7.0=pyhd3deb0d_0
   - pure_eval=0.2.2=pyhd8ed1ab_0
+  - pycodestyle=2.8.0=pyhd3eb1b0_0
   - pycparser=2.21=pyhd8ed1ab_0
   - pyg=2.0.4=py39_torch_1.11.0_cu113
   - pygments=2.12.0=pyhd8ed1ab_0
@@ -186,6 +188,7 @@ dependencies:
   - threadpoolctl=2.2.0=pyh0d69192_0
   - tinycss2=1.1.1=pyhd8ed1ab_0
   - tk=8.6.12=h27826a3_0
+  - toml=0.10.2=pyhd3eb1b0_0
   - torchaudio=0.11.0=py39_cu113
   - torchvision=0.12.0=py39_cu113
   - tornado=6.2=py39hb9d737c_0
@@ -214,6 +217,7 @@ dependencies:
     - cachetools==5.2.0
     - colorama==0.4.5
     - deap==1.3.1
+    - easydict==1.9
     - frozenlist==1.3.0
     - fsspec==2022.5.0
     - gitdb==4.0.9
