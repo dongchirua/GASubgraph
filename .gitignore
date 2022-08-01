@@ -128,5 +128,25 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# IDE
+.idea/
+
+# Data folder
+data/
+
+# Tmp output
+out/
+
+/.virtual_documents/
+lightning_logs
+weights
+*.dot
+.ipynb_checkpoints
+
+v1_weights
+v1_lightning_logs
+checkpoints
+dataset
+ray_logs
 data
 pre_train
