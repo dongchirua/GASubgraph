@@ -27,10 +27,11 @@ class GASubX(object):
         toolbox = base.Toolbox()
         toolbox.register("subgraph", subgraph, num_hops=self.l_hops, x=sample.x, edge_index=sample.edge_index)
         toolbox.register("individual", generate_individual, subgraph_func=toolbox.subgraph,
-                         num_nodes=sample.num_nodes, Individual_Cls=self.IndividualCls)
-        toolbox.register("population", init, list, toolbox.individual,)
+                         num_nodes=sample.num_nodes, Individual_Cls=creator.Individual)
+        toolbox.register("population", init, list, toolbox.individual)
+        toolbox.register("feasible", feasible, origin_graph=sample)
         toolbox.register("evaluate", GraphEvaluation(subgraph_size, self.model, self.classifier, self.device, sample))
-        toolbox.decorate("evaluate", Penalty(feasible, self.penalty, sample))
+        toolbox.decorate("evaluate", Penalty(toolbox.feasible, self.penalty))
         toolbox.register("mate", tools.cxPartialyMatched)
         toolbox.register("mutate", tools.mutFlipBit, indpb=0.05)
         toolbox.register("select", tools.selTournament, tournsize=50)
@@ -44,11 +45,10 @@ class GASubX(object):
         stats.register('min', np.min, axis=0)
         stats.register('max', np.max, axis=0)
 
-        init_pop = toolbox.population(sample.num_nodes)
-        pop = [inv for inv in init_pop if feasible(inv, sample)]
+        pop = toolbox.population(sample.num_nodes)
 
         try:
-            final_population, logbook = algorithms.eaMuPlusLambda(
+            final_population, logbook = eaMuPlusLambda(
                 pop, toolbox,
                 mu=100, lambda_=100, cxpb=self.CXPB, mutpb=self.MUTPB,
                 ngen=self.n_gen, stats=stats, halloffame=hof, verbose=verbose)
@@ -62,7 +62,7 @@ class GASubX(object):
         return hof[-1].get_nodes(), logbook
 
 
-def eaMuPlusLambda(population, toolbox, mu, lambda_, cxpb, mutpb, ngen, fesible_func,
+def eaMuPlusLambda(population, toolbox, mu, lambda_, cxpb, mutpb, ngen,
                    stats=None, halloffame=None, verbose=__debug__):
     """This is the :math:`(\mu + \lambda)` evolutionary algorithm.
 
@@ -114,7 +114,8 @@ def eaMuPlusLambda(population, toolbox, mu, lambda_, cxpb, mutpb, ngen, fesible_
     logbook.header = ['gen', 'nevals'] + (stats.fields if stats else [])
 
     # Evaluate the individuals with an invalid fitness
-    invalid_ind = [ind for ind in population if not ind.fitness.valid]
+    # invalid_ind = [ind for ind in population if not ind.fitness.valid]
+    invalid_ind = [inv for inv in population if toolbox.feasible(inv)]
     fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
     for ind, fit in zip(invalid_ind, fitnesses):
         ind.fitness.values = fit
@@ -130,7 +131,7 @@ def eaMuPlusLambda(population, toolbox, mu, lambda_, cxpb, mutpb, ngen, fesible_
     # Begin the generational process
     for gen in range(1, ngen + 1):
         # Vary the population
-        offspring = varOr(population, toolbox, lambda_, cxpb, mutpb)
+        offspring = algorithms.varOr(population, toolbox, lambda_, cxpb, mutpb)
 
         # Evaluate the individuals with an invalid fitness
         invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
