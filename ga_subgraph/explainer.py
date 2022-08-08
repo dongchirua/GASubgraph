@@ -5,7 +5,7 @@ from ga_subgraph.selections import feasible, Penalty
 from ga_subgraph.generator import subgraph
 from ga_subgraph.individual import init, generate_individual
 from torch_geometric.utils import get_num_hops
-import random
+from operator import attrgetter
 
 
 class GASubX(object):
@@ -34,7 +34,7 @@ class GASubX(object):
         toolbox.decorate("evaluate", Penalty(toolbox.feasible, self.penalty))
         toolbox.register("mate", tools.cxPartialyMatched)
         toolbox.register("mutate", tools.mutFlipBit, indpb=0.05)
-        toolbox.register("select", tools.selTournament, tournsize=50)
+        toolbox.register("select", selTournament, tournsize=50)
 
         # keep track of the best individuals
         hof = tools.HallOfFame(5)
@@ -114,10 +114,10 @@ def eaMuPlusLambda(population, toolbox, mu, lambda_, cxpb, mutpb, ngen,
     logbook.header = ['gen', 'nevals'] + (stats.fields if stats else [])
 
     # Evaluate the individuals with an invalid fitness
-    # invalid_ind = [ind for ind in population if not ind.fitness.valid]
+    population = list(set(population))
     invalid_ind = [inv for inv in population if toolbox.feasible(inv)]
-    fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
-    for ind, fit in zip(invalid_ind, fitnesses):
+    fitness = toolbox.map(toolbox.evaluate, invalid_ind)
+    for ind, fit in zip(invalid_ind, fitness):
         ind.fitness.values = fit
 
     if halloffame is not None:
@@ -132,11 +132,13 @@ def eaMuPlusLambda(population, toolbox, mu, lambda_, cxpb, mutpb, ngen,
     for gen in range(1, ngen + 1):
         # Vary the population
         offspring = algorithms.varOr(population, toolbox, lambda_, cxpb, mutpb)
+        offspring = list(set(offspring))  # get unique offspring
+        offspring = [i for i in offspring if toolbox.feasible(i)]  # remove invalid offspring
 
         # Evaluate the individuals with an invalid fitness
         invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
-        fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
-        for ind, fit in zip(invalid_ind, fitnesses):
+        fitness = toolbox.map(toolbox.evaluate, invalid_ind)
+        for ind, fit in zip(invalid_ind, fitness):
             ind.fitness.values = fit
 
         # Update the hall of fame with the generated individuals
@@ -153,3 +155,25 @@ def eaMuPlusLambda(population, toolbox, mu, lambda_, cxpb, mutpb, ngen,
             print(logbook.stream)
 
     return population, logbook
+
+
+def selTournament(individuals, k, tournsize, fit_attr="fitness"):
+    """Select the best individual among *tournsize* randomly chosen
+    individuals, *k* times. The list returned contains
+    references to the input *individuals*.
+
+    :param individuals: A list of individuals to select from.
+    :param k: The number of individuals to select.
+    :param tournsize: The number of individuals participating in each tournament.
+    :param fit_attr: The attribute of individuals to use as selection criterion
+    :returns: A list of selected individuals.
+
+    This function uses the :func:`~random.choice` function from the python base
+    :mod:`random` module.
+    """
+    individuals = list(set(individuals))  # only unique individuals
+    chosen = []
+    for i in range(k):
+        aspirants = tools.selRandom(individuals, tournsize)
+        chosen.append(max(aspirants, key=attrgetter(fit_attr)))
+    return chosen

@@ -28,6 +28,9 @@ class Individual(object):
     def __len__(self):
         return len(self.nodes)
 
+    def __hash__(self):
+        return hash('|'.join(sorted(f'{x}' for x in self.nodes)))
+
     def get_nodes(self):
         coalition = [i for i, v in enumerate(self.nodes) if v == 1]
         return coalition
