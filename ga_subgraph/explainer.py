@@ -147,12 +147,16 @@ def eaMuPlusLambda(population, toolbox, mu, lambda_, cxpb, mutpb, ngen,
 
         # Select the next generation population
         population[:] = toolbox.select(population + offspring, mu)
+        population = list(set(population))  # get unique population
 
         # Update the statistics with the new population
         record = stats.compile(population) if stats is not None else {}
         logbook.record(gen=gen, nevals=len(invalid_ind), **record)
         if verbose:
             print(logbook.stream)
+
+        if len(population) == 1:
+            break
 
     return population, logbook
 

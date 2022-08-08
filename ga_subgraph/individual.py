@@ -9,6 +9,8 @@ class Individual(object):
         else:
             self.nodes = [i for i in nodes]
 
+        self.coalition = [i for i, v in enumerate(self.nodes) if v == 1]
+
     def __repr__(self):
         coalition = [str(i) for i, v in enumerate(self.nodes) if v == 1]
         return ' '.join(coalition)
@@ -29,11 +31,14 @@ class Individual(object):
         return len(self.nodes)
 
     def __hash__(self):
-        return hash('|'.join(sorted(f'{x}' for x in self.nodes)))
+        return hash('|'.join(sorted(f'{x}' for x in self.coalition)))
+
+    def __eq__(self, other):
+        common = set(self.coalition).intersection(set(other.get_nodes()))
+        return (len(common) == len(self.coalition)) and (len(common) == len(other.get_nodes()))
 
     def get_nodes(self):
-        coalition = [i for i, v in enumerate(self.nodes) if v == 1]
-        return coalition
+        return self.coalition
 
 
 def init(container, func, num_nodes):
