@@ -125,8 +125,10 @@ saved_model.eval()
 # In[7]:
 
 
-sel = 1
+sel = 10
+k_node = 5
 print(f'select sample #{sel}')
+print(f'constraint node #{k_node}')
 foo_sample = reveal_test.get(sel)
 
 
@@ -151,7 +153,7 @@ ga_explainer = GASubX(saved_model, classifier, device, Individual, 110, args.CXP
 # In[10]:
 
 
-ga_subgraph, _ = ga_explainer.explain(foo_sample, 5, verbose=True)
+ga_subgraph, _ = ga_explainer.explain(foo_sample, k_node, verbose=True)
 print(ga_subgraph)
 
 
@@ -160,8 +162,8 @@ print(ga_subgraph)
 
 from vulexp.explanation.subgraphx import SubgraphX
 
-reveal_subgraphx = SubgraphX(model=saved_model, min_nodes=5)
-subgraph = reveal_subgraphx.explain(x=foo_sample.x.to(device), edge_index=foo_sample.edge_index.to(device), max_nodes=5)
+reveal_subgraphx = SubgraphX(model=saved_model, min_nodes=k_node)
+subgraph = reveal_subgraphx.explain(x=foo_sample.x.to(device), edge_index=foo_sample.edge_index.to(device), max_nodes=k_node)
 
 print(subgraph.coalition)
 
@@ -183,14 +185,14 @@ sub_mask[list(subgraph.coalition)] = 1
 # In[14]:
 
 
-from ga_subgraph.fitness import graph_build_split
+from ga_subgraph.fitness import graph_build_zero_filling
 
 
 # In[15]:
 
 
-ga_result = graph_build_split(foo_sample.x, foo_sample.edge_index, ga_mask)
-sub_result = graph_build_split(foo_sample.x, foo_sample.edge_index, sub_mask)
+ga_result = graph_build_zero_filling(foo_sample.x, foo_sample.edge_index, ga_mask)
+sub_result = graph_build_zero_filling(foo_sample.x, foo_sample.edge_index, sub_mask)
 
 
 # In[16]:
