@@ -34,7 +34,7 @@ class GASubX(object):
         toolbox.decorate("evaluate", Penalty(toolbox.feasible, self.penalty))
         toolbox.register("mate", tools.cxPartialyMatched)
         toolbox.register("mutate", tools.mutFlipBit, indpb=0.05)
-        toolbox.register("select", selTournament, tournsize=50)
+        toolbox.register("select", selTournament, tournsize=11)
 
         # keep track of the best individuals
         hof = tools.HallOfFame(5)
@@ -59,7 +59,7 @@ class GASubX(object):
             for individual in hof:
                 print(f'hof: {individual.fitness.values[0]:.3f} << {individual}')
 
-        return hof[-1].get_nodes(), logbook
+        return hof[0].get_nodes(), logbook
 
 
 def eaMuPlusLambda(population, toolbox, mu, lambda_, cxpb, mutpb, ngen,
@@ -168,7 +168,7 @@ def selTournament(individuals, k, tournsize, fit_attr="fitness"):
 
     :param individuals: A list of individuals to select from.
     :param k: The number of individuals to select.
-    :param tournsize: The number of individuals participating in each tournament.
+    :param tournsize: Control the number of individuals participating in each tournament.
     :param fit_attr: The attribute of individuals to use as selection criterion
     :returns: A list of selected individuals.
 
@@ -176,8 +176,9 @@ def selTournament(individuals, k, tournsize, fit_attr="fitness"):
     :mod:`random` module.
     """
     individuals = list(set(individuals))  # only unique individuals
+    size = int(len(individuals) / tournsize)
     chosen = []
     for i in range(k):
-        aspirants = tools.selRandom(individuals, tournsize)
+        aspirants = tools.selRandom(individuals, size)
         chosen.append(max(aspirants, key=attrgetter(fit_attr)))
     return chosen

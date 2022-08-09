@@ -3,42 +3,44 @@ class Individual(object):
         This class represents for a chromosome
     """
 
-    def __init__(self, nodes):
-        if type(nodes) is list:
-            self.nodes = nodes
+    def __init__(self, gene):
+        """
+            Initialize the individual with a gene
+        :param gene: is a list of 0 and 1
+        """
+        if type(gene) is list:
+            self.__gene = gene
         else:
-            self.nodes = [i for i in nodes]
-
-        self.coalition = [i for i, v in enumerate(self.nodes) if v == 1]
+            raise NotImplementedError('gene must be a list')
 
     def __repr__(self):
-        coalition = [str(i) for i, v in enumerate(self.nodes) if v == 1]
-        return ' '.join(coalition)
+        return ' '.join([str(i) for i in self.get_nodes()])
 
     def __get__(self, instance, owner):
-        return self.nodes
+        return self.__gene
 
     def __set__(self, instance, value):
-        self.nodes = value
+        self.__gene = value
 
     def __getitem__(self, item):
-        return self.nodes[item]
+        return self.__gene[item]
 
     def __setitem__(self, key, value):
-        self.nodes[key] = value
+        self.__gene[key] = value
 
     def __len__(self):
-        return len(self.nodes)
+        return len(self.__gene)
 
     def __hash__(self):
-        return hash('|'.join(sorted(f'{x}' for x in self.coalition)))
+        return hash('|'.join(sorted(f'{x}' for x in self.get_nodes())))
 
     def __eq__(self, other):
-        common = set(self.coalition).intersection(set(other.get_nodes()))
-        return (len(common) == len(self.coalition)) and (len(common) == len(other.get_nodes()))
+        common = set(self.get_nodes()).intersection(set(other.get_nodes()))
+        return (len(common) == len(self.get_nodes())) and (len(common) == len(other.get_nodes()))
 
     def get_nodes(self):
-        return self.coalition
+        coalition = sorted([i for i, v in enumerate(self.__gene) if v == 1])
+        return coalition
 
 
 def init(container, func, num_nodes):
