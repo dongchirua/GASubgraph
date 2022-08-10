@@ -3,10 +3,12 @@ from functools import partial
 import torch
 from torch_geometric.data import Data, Batch
 
+
 def graph_build_zero_filling(X, edge_index, node_mask: torch.Tensor):
     """ subgraph building through masking the unselected nodes with zero features """
     ret_X = X * node_mask.unsqueeze(1)
     return ret_X, edge_index
+
 
 def graph_build_split(X, edge_index, node_mask: torch.Tensor):
     """ subgraph building through spliting the selected nodes from the original graph """
@@ -15,6 +17,7 @@ def graph_build_split(X, edge_index, node_mask: torch.Tensor):
     ret_edge_index = edge_index[:, edge_mask]
     return X, ret_edge_index
 
+
 def get_graph_build_func(build_method):
     if build_method.lower() == 'zero_filling':
         return graph_build_zero_filling
@@ -22,6 +25,7 @@ def get_graph_build_func(build_method):
         return graph_build_split
     else:
         raise NotImplementedError
+
 
 def gnn_score(selected_nodes: List[int], origin_graph: Data, classifier: Callable,
               subgraph_building_method='zero_filling') -> float:
@@ -36,6 +40,7 @@ def gnn_score(selected_nodes: List[int], origin_graph: Data, classifier: Callabl
     score = classifier(mask_data)
     # get the score of predicted class for graph or specific node idx
     return score
+
 
 def get_fitness_func(score_method: str, classifier=None, subgraph_building_method='zero_filling', **kwargs):
     """ Function factory to generate a method measure how quality of a individual
@@ -52,10 +57,12 @@ def get_fitness_func(score_method: str, classifier=None, subgraph_building_metho
     else:
         raise NotImplementedError
 
+
 def wrap_classifier(classifier, model, device):
     """ This function setup environment for classifier
     """
     return partial(classifier, model=model, device=device)
+
 
 def classifier(data, model, device) -> float:
     """ Wraper for any classification method
@@ -64,24 +71,26 @@ def classifier(data, model, device) -> float:
     prod = torch.sigmoid(out)
     return prod.item()
 
+
 class GraphEvaluation(object):
     """
     """
-    def __init__(self, K: int, blackbox_model: torch.nn.Module, classifier: Callable , device: torch.device, 
-                    origin_graph: Data, score_method: str = 'gnn_score'):
+
+    def __init__(self, K: int, blackbox_model: torch.nn.Module, classifier: Callable, device: torch.device,
+                 origin_graph: Data, score_method: str = 'gnn_score'):
         self.K = K
         self.num_nodes = origin_graph.num_nodes
         self.wraped_classifer = wrap_classifier(classifier, blackbox_model, device)
         self.fitness_func = get_fitness_func(score_method, self.wraped_classifer, origin_graph=origin_graph)
-        self.origin_fitness_value = self.fitness_func(selected_nodes = [i for i in range(41)])  # select all nodes
+        self.origin_fitness_value = self.fitness_func(selected_nodes=[i for i in range(41)])  # select all nodes
 
     def __call__(self, chromosome) -> Tuple:
         """ A value of a subgraph is scored by how close gnn output from it and original graph.
         The final value takk size of subgraph to consideration.
         We are going to minize this function
         """
-        coalition = [i for i,v in enumerate(chromosome) if v==1]
+        coalition = [i for i, v in enumerate(chromosome) if v == 1]
         fitness_value = self.fitness_func(selected_nodes=coalition)
-        # score_for_nodes = 0 if len(coalition) <= self.K else 10
-        return abs(fitness_value - self.origin_fitness_value) + (abs(len(coalition)-self.K)/self.num_nodes),
+        # return abs(fitness_value - self.origin_fitness_value) + (abs(len(coalition) - self.K) / self.num_nodes),
         # return abs(fitness_value - self.origin_fitness_value) + score_for_nodes,
+        return 1 - fitness_value + abs(len(coalition) - self.K) / self.num_nodes,

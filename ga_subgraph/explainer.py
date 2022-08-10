@@ -6,6 +6,7 @@ from ga_subgraph.generator import subgraph
 from ga_subgraph.individual import init, generate_individual
 from torch_geometric.utils import get_num_hops
 from operator import attrgetter
+import random
 
 
 class GASubX(object):
@@ -111,11 +112,11 @@ def eaMuPlusLambda(population, toolbox, mu, lambda_, cxpb, mutpb, ngen,
     variation.
     """
     logbook = tools.Logbook()
-    logbook.header = ['gen', 'nevals'] + (stats.fields if stats else [])
+    logbook.header = ['gen', 'psize', 'nevals'] + (stats.fields if stats else [])
 
     # Evaluate the individuals with an invalid fitness
-    population = list(set(population))
-    invalid_ind = [inv for inv in population if toolbox.feasible(inv)]
+    population = [inv for inv in list(set(population)) if toolbox.feasible(inv)]
+    invalid_ind = [ind for ind in population if not ind.fitness.valid]
     fitness = toolbox.map(toolbox.evaluate, invalid_ind)
     for ind, fit in zip(invalid_ind, fitness):
         ind.fitness.values = fit
@@ -147,11 +148,10 @@ def eaMuPlusLambda(population, toolbox, mu, lambda_, cxpb, mutpb, ngen,
 
         # Select the next generation population
         population[:] = toolbox.select(population + offspring, mu)
-        population = list(set(population))  # get unique population
 
         # Update the statistics with the new population
         record = stats.compile(population) if stats is not None else {}
-        logbook.record(gen=gen, nevals=len(invalid_ind), **record)
+        logbook.record(gen=gen, psize=len(population), nevals=len(invalid_ind), **record)
         if verbose:
             print(logbook.stream)
 
@@ -178,7 +178,15 @@ def selTournament(individuals, k, tournsize, fit_attr="fitness"):
     individuals = list(set(individuals))  # only unique individuals
     size = int(len(individuals) / tournsize)
     chosen = []
+    k = min(k, len(individuals))
     for i in range(k):
-        aspirants = tools.selRandom(individuals, size)
-        chosen.append(max(aspirants, key=attrgetter(fit_attr)))
+        random.shuffle(individuals)
+        aspirants = individuals[:size]
+        sel = max(aspirants, key=attrgetter(fit_attr))
+        sel_index = aspirants.index(sel)
+        chosen.append(sel)
+        del aspirants[sel_index]
+        individuals = aspirants + individuals[size:]
+
+    chosen = list(set(chosen))  # get unique individuals
     return chosen
