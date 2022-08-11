@@ -38,7 +38,7 @@ class GASubX(object):
         toolbox.register("select", selTournament, tournsize=11)
 
         # keep track of the best individuals
-        hof = tools.HallOfFame(5)
+        hof = tools.HallOfFame(15)
 
         # setting the statistics (displayed for each generation)
         stats = tools.Statistics(key=lambda ind: ind.fitness.values)
