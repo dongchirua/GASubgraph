@@ -43,7 +43,7 @@ class Individual(object):
         return coalition
 
 
-def init(container, func, num_nodes):
+def init_population(container, func, num_nodes):
     return container(func(i) for i in range(num_nodes))
 
 

@@ -36,7 +36,7 @@ from torch_geometric.nn import GCNConv, GINConv, GNNExplainer, global_max_pool
 from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.nn.models import GIN
 from torch_geometric.utils import k_hop_subgraph, remove_self_loops, to_networkx
-from tqdm.notebook import trange, tqdm
+from tqdm.auto import trange, tqdm
 from visualization.plot import visualize_explanation
 
 # run GA with dummy classification but on realdata
@@ -58,7 +58,9 @@ class Args:
     seed: int = 27  # Random seed.
     pre_train: bool = True  # Change to False if want to retrain
     CXPB = 0.5
-    MUTPB = 0.3
+    MUTPB = 0.015
+    tournsize = 11
+    to_undirected = True
 
 
 args = Args()
@@ -78,7 +80,7 @@ from vulexp.data_models.pl_data_module import DataModule
 from vulexp.data_models.reveal_data import Reveal
 
 data_dir = 'data/reveal/'
-reveal_dataset = Reveal(data_dir, to_undirected=True, seed=args.seed)
+reveal_dataset = Reveal(data_dir, to_undirected=args.to_undirected, seed=args.seed)
 
 reveal_train, reveal_val, reveal_test = reveal_dataset.generate_train_test()
 
@@ -92,7 +94,7 @@ reveal_valid_loader = DataLoader(
     dataset=reveal_val,
     batch_size=args.batch_size,
     num_workers=args.num_workers,
-    shuffle=False
+    shuffle=True
 )
 reveal_test_loader = DataLoader(
     dataset=reveal_test,
@@ -119,8 +121,14 @@ saved_model.eval()
 
 # In[7]:
 
+# positive = []
+# for i in tqdm(range(len(reveal_test))):
+#     l = reveal_test.get(i)
+#     if l.y.item() == 1:
+#         positive.append(i)
+# 0 -> 162
 
-sel = 1
+sel = 10
 k_node = 5
 print(f'select sample #{sel}')
 print(f'constraint node #{k_node}')
@@ -131,7 +139,7 @@ foo_sample = reveal_test.get(sel)
 
 output = saved_model(foo_sample.x.to(device), foo_sample.edge_index.to(device), None)
 pred = torch.sigmoid(output).item()
-print(pred)
+print(pred, foo_sample.y, foo_sample.num_nodes)
 
 # In[9]:
 
@@ -140,7 +148,7 @@ from ga_subgraph.explainer import GASubX
 from ga_subgraph.fitness import classifier
 from ga_subgraph.individual import Individual
 
-ga_explainer = GASubX(saved_model, classifier, device, Individual, 110, args.CXPB, args.MUTPB)
+ga_explainer = GASubX(saved_model, classifier, device, Individual, 150, args.CXPB, args.MUTPB, args.tournsize)
 
 ga_subgraph, _ = ga_explainer.explain(foo_sample, k_node, verbose=True)
 print(ga_subgraph)
@@ -153,7 +161,6 @@ from vulexp.explanation.subgraphx import SubgraphX
 reveal_subgraphx = SubgraphX(model=saved_model, min_nodes=k_node)
 subgraph = reveal_subgraphx.explain(x=foo_sample.x.to(device), edge_index=foo_sample.edge_index.to(device),
                                     max_nodes=k_node)
-
 print(subgraph.coalition)
 
 
@@ -165,13 +172,14 @@ from ga_subgraph.fitness import graph_build_zero_filling, graph_build_split
 
 # In[15]:
 
-def helper(selected_nodes, sample, model):
+def helper(selected_nodes, sample, model, origin_pred):
+    complementary_nodes = list(set(range(sample.num_nodes)) - set(selected_nodes))
     mask = torch.zeros(sample.num_nodes).type(torch.float32).to(sample.x.device)
-    mask[selected_nodes] = 1
-    r_subgraph, r_subgraph_egde = graph_build_zero_filling(sample.x, sample.edge_index, mask)
+    mask[complementary_nodes] = 1
+    r_subgraph, r_subgraph_egde = graph_build_split(sample.x, sample.edge_index, mask)
     o = model(r_subgraph.to(device), r_subgraph_egde.to(device), None)
     prob = torch.sigmoid(o).item()
-    print(prob)
+    print(abs(origin_pred-prob))
 
 
 # ga_result = graph_build_zero_filling(foo_sample.x, foo_sample.edge_index, ga_mask)
@@ -184,7 +192,7 @@ def helper(selected_nodes, sample, model):
 # output = saved_model(ga_result[0].to(device), ga_result[1].to(device), None)
 # pred = torch.sigmoid(output).item()
 # print(pred)
-helper(ga_subgraph, foo_sample, saved_model)
+helper(ga_subgraph, foo_sample, saved_model, pred)
 
 # In[17]:
 
@@ -192,7 +200,7 @@ helper(ga_subgraph, foo_sample, saved_model)
 # output = saved_model(sub_result[0].to(device), sub_result[1].to(device), None)
 # pred = torch.sigmoid(output).item()
 # print(pred)
-helper(list(subgraph.coalition), foo_sample, saved_model)
+helper(list(subgraph.coalition), foo_sample, saved_model, pred)
 
 # In[ ]:
 visualize_explanation(foo_sample, selected_nodes=ga_subgraph, selected_edges=None)

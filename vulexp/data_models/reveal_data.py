@@ -24,12 +24,11 @@ w2v_path = os.path.join(cwd, 'data/Word2Vec/li_et_al_wv')  # should be vulnerabi
 
 
 class Reveal(BaseDataModule, ABC):
-
     feature_dim = 64
     n_class = 2
 
     def __init__(self, root, over_write=False, absolute_path=None, to_undirected=False,
-                seed: Optional[int]=None):
+                 seed: Optional[int] = None):
         super().__init__(root, over_write)
         self.absolute_path = absolute_path
         self.to_undirected = to_undirected
@@ -94,7 +93,7 @@ class Reveal(BaseDataModule, ABC):
 
     def generate_train_test(self):
         seed = self.seed
-        
+
         self.map_id_to_graph_file.index = range(0, len(self.map_id_to_graph_file.index))
 
         non_data = self.map_id_to_graph_file[self.map_id_to_graph_file['gt'] == 0]

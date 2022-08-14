@@ -77,12 +77,13 @@ class GraphEvaluation(object):
     """
 
     def __init__(self, K: int, blackbox_model: torch.nn.Module, classifier: Callable, device: torch.device,
-                 origin_graph: Data, score_method: str = 'gnn_score'):
+                 origin_graph: Data, score_method: str = 'gnn_score', subgraph_building_method='zero_filling'):
         self.K = K
         self.num_nodes = origin_graph.num_nodes
         self.wraped_classifer = wrap_classifier(classifier, blackbox_model, device)
-        self.fitness_func = get_fitness_func(score_method, self.wraped_classifer, origin_graph=origin_graph)
-        self.origin_fitness_value = self.fitness_func(selected_nodes=[i for i in range(41)])  # select all nodes
+        self.fitness_func = get_fitness_func(score_method, self.wraped_classifer, origin_graph=origin_graph,
+                                             subgraph_building_method=subgraph_building_method)
+        self.origin_fitness_value = self.fitness_func(selected_nodes=[i for i in range(self.num_nodes)])  # select all nodes
 
     def __call__(self, chromosome) -> Tuple:
         """ A value of a subgraph is scored by how close gnn output from it and original graph.
@@ -91,6 +92,7 @@ class GraphEvaluation(object):
         """
         coalition = [i for i, v in enumerate(chromosome) if v == 1]
         fitness_value = self.fitness_func(selected_nodes=coalition)
-        # return abs(fitness_value - self.origin_fitness_value) + (abs(len(coalition) - self.K) / self.num_nodes),
+        return abs(fitness_value - self.origin_fitness_value) + (abs(len(coalition) - self.K)),
         # return abs(fitness_value - self.origin_fitness_value) + score_for_nodes,
-        return 1 - fitness_value + abs(len(coalition) - self.K) / self.num_nodes,
+        # bonus = 0 if len(coalition) == self.K else 10
+        # return self.origin_fitness_value - fitness_value + abs(len(coalition) - self.K),

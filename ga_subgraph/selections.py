@@ -15,7 +15,7 @@ except ImportError:
 def feasible(individual: Individual, origin_graph) -> bool:
     """Feasibility function for the individual. Returns True if feasible False
     otherwise."""
-    G = to_networkx(origin_graph, to_undirected=origin_graph.is_directed())
+    G = to_networkx(origin_graph, to_undirected=not origin_graph.is_directed())
     sub_graph = G.subgraph(individual.get_nodes())
     if origin_graph.is_directed():
         components = [i for i in nx.weakly_connected_components(sub_graph)]

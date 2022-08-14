@@ -3,14 +3,25 @@ from deap import base, algorithms, creator, tools
 from ga_subgraph.fitness import GraphEvaluation
 from ga_subgraph.selections import feasible, Penalty
 from ga_subgraph.generator import subgraph
-from ga_subgraph.individual import init, generate_individual
+from ga_subgraph.individual import init_population, generate_individual
+from ga_subgraph.mating import cxPartialyMatched
+from ga_subgraph.mutation import mutate
 from torch_geometric.utils import get_num_hops
 from operator import attrgetter
 import random
+from tqdm.auto import tqdm
+import logging
+
+logging.basicConfig(
+    format='%(asctime)s | %(name)s | %(message)s',
+    level=logging.INFO,
+    datefmt='%Y-%m-%d %H:%M:%S')
+
+logger = logging.getLogger('GASub')
 
 
 class GASubX(object):
-    def __init__(self, blackbox, classifier, device, IndividualCls, n_gen, CXPB, MUTPB, ) -> None:
+    def __init__(self, blackbox, classifier, device, IndividualCls, n_gen, CXPB, MUTPB, tournsize) -> None:
         self.model = blackbox
         self.device = device
         self.classifier = classifier
@@ -19,6 +30,7 @@ class GASubX(object):
         self.MUTPB = MUTPB
         self.n_gen = n_gen
         self.l_hops = get_num_hops(blackbox)
+        self.tournsize = tournsize
 
         self.IndividualCls = IndividualCls
         creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
@@ -29,13 +41,14 @@ class GASubX(object):
         toolbox.register("subgraph", subgraph, num_hops=self.l_hops, x=sample.x, edge_index=sample.edge_index)
         toolbox.register("individual", generate_individual, subgraph_func=toolbox.subgraph,
                          num_nodes=sample.num_nodes, Individual_Cls=creator.Individual)
-        toolbox.register("population", init, list, toolbox.individual)
+        toolbox.register("population", init_population, list, toolbox.individual)
         toolbox.register("feasible", feasible, origin_graph=sample)
-        toolbox.register("evaluate", GraphEvaluation(subgraph_size, self.model, self.classifier, self.device, sample))
+        toolbox.register("evaluate", GraphEvaluation(subgraph_size, self.model, self.classifier,
+                                                     self.device, sample, subgraph_building_method='split'))
         toolbox.decorate("evaluate", Penalty(toolbox.feasible, self.penalty))
-        toolbox.register("mate", tools.cxPartialyMatched)
-        toolbox.register("mutate", tools.mutFlipBit, indpb=0.05)
-        toolbox.register("select", selTournament, tournsize=11)
+        toolbox.register("mate", cxPartialyMatched)
+        toolbox.register("mutate", mutate, indpb=self.MUTPB, origin_graph=sample)
+        toolbox.register("select", selTournament, tournsize=self.tournsize)
 
         # keep track of the best individuals
         hof = tools.HallOfFame(15)
@@ -58,7 +71,7 @@ class GASubX(object):
 
         if verbose:
             for individual in hof:
-                print(f'hof: {individual.fitness.values[0]:.3f} << {individual}')
+                logger.info(f'hall of frame: {individual.fitness.values[0]:.4f} << {individual}')
 
         return hof[0].get_nodes(), logbook
 
@@ -126,37 +139,39 @@ def eaMuPlusLambda(population, toolbox, mu, lambda_, cxpb, mutpb, ngen,
 
     record = stats.compile(population) if stats is not None else {}
     logbook.record(gen=0, nevals=len(invalid_ind), **record)
-    if verbose:
-        print(logbook.stream)
+    # if verbose:
+    #     logger.info(logbook.stream)
 
-    # Begin the generational process
-    for gen in range(1, ngen + 1):
-        # Vary the population
-        offspring = algorithms.varOr(population, toolbox, lambda_, cxpb, mutpb)
-        offspring = list(set(offspring))  # get unique offspring
-        offspring = [i for i in offspring if toolbox.feasible(i)]  # remove invalid offspring
+    with tqdm(total=ngen) as t:
+        for gen in range(1, ngen + 1):
+            # Vary the population
+            offspring = algorithms.varOr(population, toolbox, lambda_, cxpb, mutpb)
+            offspring = list(set(offspring))  # get unique offspring
+            offspring = [i for i in offspring if toolbox.feasible(i)]  # remove invalid offspring
 
-        # Evaluate the individuals with an invalid fitness
-        invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
-        fitness = toolbox.map(toolbox.evaluate, invalid_ind)
-        for ind, fit in zip(invalid_ind, fitness):
-            ind.fitness.values = fit
+            # Evaluate the individuals with an invalid fitness
+            invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
+            fitness = toolbox.map(toolbox.evaluate, invalid_ind)
+            for ind, fit in zip(invalid_ind, fitness):
+                ind.fitness.values = fit
 
-        # Update the hall of fame with the generated individuals
-        if halloffame is not None:
-            halloffame.update(offspring)
+            # Update the hall of fame with the generated individuals
+            if halloffame is not None:
+                halloffame.update(offspring)
 
-        # Select the next generation population
-        population[:] = toolbox.select(population + offspring, mu)
+            # Select the next generation population
+            population[:] = toolbox.select(population + offspring, mu)
 
-        # Update the statistics with the new population
-        record = stats.compile(population) if stats is not None else {}
-        logbook.record(gen=gen, psize=len(population), nevals=len(invalid_ind), **record)
-        if verbose:
-            print(logbook.stream)
+            # Update the statistics with the new population
+            record = stats.compile(population) if stats is not None else {}
+            logbook.record(gen=gen, psize=len(population), nevals=len(invalid_ind), **record)
+            # if verbose:
+            #     print(logbook.stream)
 
-        if len(population) == 1:
-            break
+            if len(population) == 1:
+                break
+
+            t.update()
 
     return population, logbook
 
