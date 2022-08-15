@@ -72,6 +72,31 @@ def classifier(data, model, device) -> float:
     return prod.item()
 
 
+def get_selected_nodes(edge_index: torch.Tensor,
+                       edge_mask: torch.Tensor,
+                       top_k: int):
+    """
+    Get the nodes of the top k-edge subgraph.
+
+    Args:
+        edge_index (torch.Tensor, [2 x m]): edge index of the graph
+        edge_mask (torch.Tensor, [m]): edge mask of the graph
+        top_k (int): number of edges to include in the subgraph
+
+    Returns:
+        selected_nodes: list of the indices of the selected nodes
+    """
+    sorted_edge_weights = edge_mask.reshape(-1).sort(descending=True)
+    threshold = float(sorted_edge_weights.values[min(top_k, edge_mask.shape[0] - 1)])
+    hard_mask = edge_mask > threshold
+    edge_idx_list = torch.where(hard_mask == 1)[0]
+    selected_nodes = []
+    for edge_idx in edge_idx_list:
+        selected_nodes += [edge_index[0][edge_idx].item(), edge_index[1][edge_idx].item()]
+    selected_nodes = list(set(selected_nodes))
+    return selected_nodes
+
+
 class GraphEvaluation(object):
     """
     """
@@ -83,7 +108,8 @@ class GraphEvaluation(object):
         self.wraped_classifer = wrap_classifier(classifier, blackbox_model, device)
         self.fitness_func = get_fitness_func(score_method, self.wraped_classifer, origin_graph=origin_graph,
                                              subgraph_building_method=subgraph_building_method)
-        self.origin_fitness_value = self.fitness_func(selected_nodes=[i for i in range(self.num_nodes)])  # select all nodes
+        self.origin_fitness_value = self.fitness_func(
+            selected_nodes=[i for i in range(self.num_nodes)])  # select all nodes
 
     def __call__(self, chromosome) -> Tuple:
         """ A value of a subgraph is scored by how close gnn output from it and original graph.
