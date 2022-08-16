@@ -117,8 +117,11 @@ class GraphEvaluation(object):
         We are going to minize this function
         """
         coalition = [i for i, v in enumerate(chromosome) if v == 1]
-        fitness_value = self.fitness_func(selected_nodes=coalition)
-        return abs(fitness_value - self.origin_fitness_value) + (abs(len(coalition) - self.K)),
+        # prob = self.fitness_func(selected_nodes=coalition)
+        complementary_coalition = list(set(range(self.num_nodes)) - set(coalition))
+        inv_prob = self.fitness_func(selected_nodes=complementary_coalition)
+        # return 1 / abs(inv_prob - self.origin_fitness_value) + abs(len(coalition) - self.K),
+        # return abs(prob - self.origin_fitness_value) + (abs(len(coalition) - self.K)),
         # return abs(fitness_value - self.origin_fitness_value) + score_for_nodes,
-        # bonus = 0 if len(coalition) == self.K else 10
-        # return self.origin_fitness_value - fitness_value + abs(len(coalition) - self.K),
+        penalty = 0 if len(coalition) == self.K else 10
+        return 1 / abs(inv_prob - self.origin_fitness_value) + penalty,

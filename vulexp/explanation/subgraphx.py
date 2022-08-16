@@ -54,6 +54,7 @@ class MCTSNode(object):
         """Returns the number of nodes in the subgraph represented by the MCTSNode."""
         return len(self.coalition)
 
+
 def gnn_score(coalition: Tuple[int, ...], data: Data, model: torch.nn.Module) -> float:
     """Computes the GNN score of the subgraph with the selected coalition of nodes.
 
@@ -233,6 +234,7 @@ class MCTS(object):
         explanations = sorted(explanations, key=lambda x: (x.P, -x.size), reverse=True)
 
         return explanations
+
 
 class SubgraphX(object):
     """An object which contains methods to explain a GNN's prediction on a graph in terms of subgraphs."""

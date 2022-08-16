@@ -1,6 +1,8 @@
 import random
 from typing import Tuple
 from .individual import Individual
+from torch_geometric.data import Data
+from torch_geometric.utils import to_networkx
 
 
 def cxPartialyMatched(ind1: Individual, ind2: Individual) -> Tuple[Individual, Individual]:
@@ -49,5 +51,20 @@ def cxPartialyMatched(ind1: Individual, ind2: Individual) -> Tuple[Individual, I
         # Position bookkeeping
         p1[temp1], p1[temp2] = p1[temp2], p1[temp1]
         p2[temp1], p2[temp2] = p2[temp2], p2[temp1]
+
+    return ind1, ind2
+
+
+def cxCommonMatched(ind1: Individual, ind2: Individual) -> Tuple[Individual, Individual]:
+    nodes1 = ind1.get_nodes()
+    nodes2 = ind2.get_nodes()
+    common = set(nodes1).intersection(set(nodes2))
+
+    if len(common) < 1:
+        return cxPartialyMatched(ind1, ind2)
+
+    for i in nodes2:  # using ind2 to store common
+        if i not in common:
+            ind2[i] = type(ind2[i])(not ind2[i])
 
     return ind1, ind2

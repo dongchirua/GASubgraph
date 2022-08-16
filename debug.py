@@ -57,10 +57,13 @@ class Args:
     dropout: float = 0.2  # Dropout probability.
     seed: int = 27  # Random seed.
     pre_train: bool = True  # Change to False if want to retrain
-    CXPB = 0.5
-    MUTPB = 0.015
+    CXPB = 0.55
+    MUTPB = 0.25
     tournsize = 11
     to_undirected = True
+    # subgraph_building_method = 'split'
+    subgraph_building_method = "zero_filling"
+    n_generation = 150
 
 
 args = Args()
@@ -128,7 +131,7 @@ saved_model.eval()
 #         positive.append(i)
 # 0 -> 162
 
-sel = 10
+sel = 22
 k_node = 5
 print(f'select sample #{sel}')
 print(f'constraint node #{k_node}')
@@ -148,8 +151,8 @@ from ga_subgraph.explainer import GASubX
 from ga_subgraph.fitness import classifier
 from ga_subgraph.individual import Individual
 
-ga_explainer = GASubX(saved_model, classifier, device, Individual, 150, args.CXPB, args.MUTPB, args.tournsize)
-
+ga_explainer = GASubX(saved_model, classifier, device, Individual, args.n_generation, args.CXPB, args.MUTPB,
+                      args.tournsize, args.subgraph_building_method)
 ga_subgraph, _ = ga_explainer.explain(foo_sample, k_node, verbose=True)
 print(ga_subgraph)
 
@@ -158,7 +161,7 @@ print(ga_subgraph)
 
 from vulexp.explanation.subgraphx import SubgraphX
 
-reveal_subgraphx = SubgraphX(model=saved_model, min_nodes=k_node)
+reveal_subgraphx = SubgraphX(model=saved_model, min_nodes=3, n_rollout=args.n_generation)
 subgraph = reveal_subgraphx.explain(x=foo_sample.x.to(device), edge_index=foo_sample.edge_index.to(device),
                                     max_nodes=k_node)
 print(subgraph.coalition)
@@ -178,8 +181,15 @@ def helper(selected_nodes, sample, model, origin_pred):
     mask[complementary_nodes] = 1
     r_subgraph, r_subgraph_egde = graph_build_split(sample.x, sample.edge_index, mask)
     o = model(r_subgraph.to(device), r_subgraph_egde.to(device), None)
+    inv_prob = torch.sigmoid(o).item()
+
+    mask = torch.zeros(sample.num_nodes).type(torch.float32).to(sample.x.device)
+    mask[selected_nodes] = 1
+    r_subgraph, r_subgraph_egde = graph_build_split(sample.x, sample.edge_index, mask)
+    o = model(r_subgraph.to(device), r_subgraph_egde.to(device), None)
     prob = torch.sigmoid(o).item()
-    print(abs(origin_pred-prob))
+
+    print('prob', prob, 'inv_prob', inv_prob,  'inv_fidelity', origin_pred-inv_prob, 'fidelity', origin_pred-prob)
 
 
 # ga_result = graph_build_zero_filling(foo_sample.x, foo_sample.edge_index, ga_mask)

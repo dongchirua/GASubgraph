@@ -12,11 +12,14 @@ except ImportError:
     from collections import Sequence
 
 
-def feasible(individual: Individual, origin_graph) -> bool:
+def feasible(individual: Individual, origin_graph, K=0) -> bool:
     """Feasibility function for the individual. Returns True if feasible False
     otherwise."""
+    nodes = individual.get_nodes()
+    if len(nodes) < K:
+        return False
     G = to_networkx(origin_graph, to_undirected=not origin_graph.is_directed())
-    sub_graph = G.subgraph(individual.get_nodes())
+    sub_graph = G.subgraph(nodes)
     if origin_graph.is_directed():
         components = [i for i in nx.weakly_connected_components(sub_graph)]
     else:

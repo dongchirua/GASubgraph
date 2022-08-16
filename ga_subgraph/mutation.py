@@ -4,21 +4,9 @@ from torch_geometric.data import Data
 from torch_geometric.utils import to_networkx
 
 
-def mutFlipBit(individual, indpb, **kwargs):
-    """Flip the value of the attributes of the input individual and return the
-    mutant. The *individual* is expected to be a :term:`sequence` and the values of the
-    attributes shall stay valid after the ``not`` operator is called on them.
-    The *indpb* argument is the probability of each attribute to be
-    flipped. This mutation is usually applied on boolean individuals.
-
-    :param individual: Individual to be mutated.
-    :param indpb: Independent probability for each attribute to be flipped.
-    :returns: A tuple of one individual.
-
-    This function uses the :func:`~random.random` function from the python base
-    :mod:`random` module.
-    """
-    for i in range(len(individual)):
+def mutFlipBit(individual, indpb, origin_graph: Data):
+    n_nodes = origin_graph.num_nodes
+    for i in range(n_nodes):
         if random.random() < indpb:
             individual[i] = type(individual[i])(not individual[i])
 
@@ -33,34 +21,25 @@ def mutAddNeighbor(individual: Individual, origin_graph: Data, indpb):
         neighbor.update(g.neighbors(i))
     neighbor = neighbor - set(nodes)
     for i in list(neighbor):
-        if random.random() < indpb:
-            individual[i] = type(individual[i])(not individual[i])
+        individual[i] = type(individual[i])(not individual[i])
 
     return individual,
 
 
-def mutRemoveBit(individual, indpb, **kwargs):
-    """Remove a bit of the input individual and return the mutant. The
-    *individual* is expected to be a :term:`sequence` and the values of the
-    attributes shall stay valid after the ``not`` operator is called on them.
-    The *indpb* argument is the probability of each attribute to be
-    removed. This mutation is usually applied on boolean individuals.
-
-    :param individual: Individual to be mutated.
-    :param indpb: Independent probability for each attribute to be removed.
-    :returns: A tuple of one individual.
-
-    This function uses the :func:`~random.random` function from the python base
-    :mod:`random` module.
-    """
+def mutRemoveBit(individual, **kwargs):
     nodes = individual.get_nodes()
-    for i in nodes:
-        if random.random() < indpb:
-            individual[i] = type(individual[i])(not individual[i])
+    sel = random.choice(nodes)
+    sel_ind = nodes.index(sel)
+    n1 = nodes[:sel_ind]
+    n2 = nodes[sel_ind:]
+    if len(n1) < len(n2):  # swap
+        n1, n2 = n2, n1
+    for i in n2:
+        individual[i] = type(individual[i])(not individual[i])
 
     return individual,
 
 
 def mutate(individual: Individual, origin_graph: Data, indpb):
-    op_choice = random.choice([mutFlipBit, mutAddNeighbor, mutRemoveBit])
+    op_choice = random.choice([mutFlipBit, mutRemoveBit, mutAddNeighbor])
     return op_choice(**{'individual': individual, 'indpb': indpb, 'origin_graph': origin_graph})
