@@ -11,6 +11,8 @@ from operator import attrgetter
 import random
 from tqdm.auto import tqdm
 import logging
+from scoop import futures
+
 
 logging.basicConfig(
     format='%(asctime)s | %(name)s | %(message)s',
@@ -22,7 +24,7 @@ logger = logging.getLogger('GASub')
 
 class GASubX(object):
     def __init__(self, blackbox, classifier, device, IndividualCls, n_gen, CXPB, MUTPB, tournsize,
-                 subgraph_building_method) -> None:
+                 subgraph_building_method, max_population=400, offspring_population=100) -> None:
         self.model = blackbox
         self.device = device
         self.classifier = classifier
@@ -33,6 +35,8 @@ class GASubX(object):
         self.l_hops = get_num_hops(blackbox)
         self.tournsize = tournsize
         self.subgraph_building_method = subgraph_building_method
+        self.max_population = max_population
+        self.offspring_population = offspring_population
 
         self.IndividualCls = IndividualCls
         creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
@@ -67,7 +71,7 @@ class GASubX(object):
         try:
             final_population, logbook = eaMuPlusLambda(
                 pop, toolbox,
-                mu=600, lambda_=100, cxpb=self.CXPB, mutpb=self.MUTPB,
+                mu=self.max_population, lambda_=self.offspring_population, cxpb=self.CXPB, mutpb=self.MUTPB,
                 ngen=self.n_gen, stats=stats, halloffame=hof, verbose=verbose)
         except (Exception, KeyboardInterrupt) as e:
             raise e
@@ -251,7 +255,7 @@ def varOr(population, toolbox, lambda_, cxpb, mutpb):
     offspring = []
     for _ in range(lambda_):
         op_choice = random.random()
-        if op_choice < cxpb:            # Apply crossover
+        if op_choice < cxpb and len(population) > 2:            # Apply crossover
             ind1, ind2 = list(map(toolbox.clone, random.sample(population, 2)))
             ind1, ind2 = toolbox.mate(ind1, ind2)
             del ind1.fitness.values

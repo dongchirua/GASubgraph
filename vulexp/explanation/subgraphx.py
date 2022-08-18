@@ -88,7 +88,7 @@ def get_best_mcts_node(results: List[MCTSNode], max_nodes: int) -> MCTSNode:
     :return: The MCTSNode with the highest reward (and smallest graph if tied) that has at most max_nodes nodes.
     """
     # Filter subgraphs to only include those with at most max_nodes nodes
-    results = [result for result in results if result.size <= max_nodes]
+    results = [result for result in results if result.size == max_nodes]
 
     # Check that there exists a subgraph with at most max_nodes nodes
     if len(results) == 0:
