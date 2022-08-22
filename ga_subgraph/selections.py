@@ -16,8 +16,6 @@ def feasible(individual: Individual, origin_graph, K=0) -> bool:
     """Feasibility function for the individual. Returns True if feasible False
     otherwise."""
     nodes = individual.get_nodes()
-    if len(nodes) < K:
-        return False
     G = to_networkx(origin_graph, to_undirected=not origin_graph.is_directed())
     sub_graph = G.subgraph(nodes)
     if origin_graph.is_directed():

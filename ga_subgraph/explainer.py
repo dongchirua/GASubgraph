@@ -11,7 +11,7 @@ from operator import attrgetter
 import random
 from tqdm.auto import tqdm
 import logging
-from scoop import futures
+
 
 
 logging.basicConfig(

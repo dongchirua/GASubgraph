@@ -132,8 +132,8 @@ saved_model.eval()
 #         positive.append(i)
 # 0 -> 162
 
-sel = 80
-k_node = 6
+sel = 3
+k_node = 16
 print(f'select sample #{sel}')
 print(f'constraint node #{k_node}')
 foo_sample = reveal_test.get(sel)
@@ -186,7 +186,7 @@ def extract_node_from_mask(mask, select_nodes: int, sample: Data):
 
 gnn_explainer = GNNExplainer(saved_model, epochs=args.n_generation, return_type='raw', log=False)
 _, gnn_edge_mask = gnn_explainer.explain_graph(foo_sample.x.to(device), foo_sample.edge_index.to(device))
-gnn_explainer_nodes = extract_node_from_mask(gnn_edge_mask, 5, foo_sample)
+gnn_explainer_nodes = extract_node_from_mask(gnn_edge_mask, k_node, foo_sample)
 print('gnnexplainer', gnn_explainer_nodes)
 
 # In[14]:

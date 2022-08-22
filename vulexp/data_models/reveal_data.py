@@ -67,6 +67,8 @@ class Reveal(BaseDataModule, ABC):
                     self._serialize_n_count_graph(G, save_path)
                 except Exception as e:
                     self.error_files.append((osp.join(raw_folder, i), str(e)))
+            else:
+                print('skip generate new file')
 
     def handle(self):
         raw_folder = osp.join(self.root, 'raw', 'raw_data')
