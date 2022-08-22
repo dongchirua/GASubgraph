@@ -6,7 +6,7 @@ from torch_geometric.data import Data
 from ga_subgraph.utils import helper
 
 
-def visualize_subgraph(graph: nx.Graph, ax, title,
+def visualize_subgraph(graph: nx.Graph, ax, title="",
                        node_set: Optional[Set[int]] = None,
                        edge_set: Optional[Set[int]] = None) -> None:
     """Visualizes a subgraph explanation for a graph from the MUTAG dataset.
@@ -37,10 +37,11 @@ def visualize_subgraph(graph: nx.Graph, ax, title,
     nx.draw_networkx_edges(G=graph, pos=pos, edgelist=list(edge_set), width=2, edge_color='black', arrows=False, ax=ax)
     nx.draw_networkx_labels(G=graph, pos=pos, ax=ax)
 
-    ax.title.set_text(title)
+    if ax is not None:
+        ax.title.set_text(title)
 
 
-def visualize_explanation(sample: Data, ax,
+def visualize_explanation(sample: Data, ax=None,
                           selected_nodes: list = None, selected_edges: list = None, title='Explanation') -> None:
     """Visualizes the explanations."""
     graph = to_networkx(sample, to_undirected=not sample.is_directed())
