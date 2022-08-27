@@ -62,6 +62,8 @@ class BaseDataModule(LightningDataModule):
             for token in symbolic_line_tokens:
                 try:
                     embedding = self.word2vec.wv[token]
+                except KeyError:
+                    embedding = np.zeros(self.feat_dim)
                 except ValueError:
                     embedding = np.zeros(self.feat_dim)
                 nrp = np.add(nrp, embedding)

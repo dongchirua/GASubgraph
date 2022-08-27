@@ -34,7 +34,7 @@ class Reveal(BaseDataModule, ABC):
         self.to_undirected = to_undirected
         self.seed = seed
 
-    def _loop_over_folder(self, raw_folder, parsed_folder, processed_folder, label, min_line_number_acceptable=2):
+    def _loop_over_folder(self, raw_folder, parsed_folder, processed_folder, label=0, min_line_number_acceptable=2):
         """
         :param raw_folder:
         :param parsed_folder:
@@ -66,7 +66,7 @@ class Reveal(BaseDataModule, ABC):
                     G = relabel_nodes(G)
                     self._serialize_n_count_graph(G, save_path)
                 except Exception as e:
-                    self.error_files.append((osp.join(raw_folder, i), str(e)))
+                    raise e
             else:
                 print('skip generate new file')
 

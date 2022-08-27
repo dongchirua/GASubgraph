@@ -57,18 +57,18 @@ def visualize_explanation(sample: Data, ax=None,
 
 def aggregate_figures(sample: Data, ga_selects, gnnex_select, subx_select,
                       sample_id, origin_pred, saved_model, device):
-    fig, (ax1, ax2, ax3) = plt.subplots(3)
+    fig, (ax1, ax2, ax3) = plt.subplots(3, figsize=(7, 12))
     p, inv_p, fidelity = helper(ga_selects, sample, saved_model, origin_pred, device)
-    visualize_explanation(sample, ax=ax1, selected_nodes=ga_selects, title=f'GASubX - fidelity {fidelity:.4f}')
+    visualize_explanation(sample, ax=ax1, selected_nodes=ga_selects, title=f'GASubX')
 
     p, inv_p, fidelity = helper(gnnex_select, sample, saved_model, origin_pred, device)
-    visualize_explanation(sample, ax=ax2, selected_nodes=gnnex_select, title=f'GNNExplainer - fidelity {fidelity:.4f}')
+    visualize_explanation(sample, ax=ax2, selected_nodes=gnnex_select, title=f'GNNExplainer')
 
     p, inv_p, fidelity = helper(subx_select, sample, saved_model, origin_pred, device)
-    visualize_explanation(sample, ax=ax3, selected_nodes=subx_select, title=f'SubgraphX - fidelity {fidelity:.4f}')
+    visualize_explanation(sample, ax=ax3, selected_nodes=subx_select, title=f'SubgraphX')
 
     # plt.tight_layout(pad=.5)
-
-    plt.suptitle(f"Sample: {sample_id}'s original prediction {origin_pred:.4f} ")
+    if sample_id is not None:
+        plt.suptitle(f"Sample: {sample_id}'s original prediction {origin_pred:.4f} ")
     plt.show()
     plt.close()

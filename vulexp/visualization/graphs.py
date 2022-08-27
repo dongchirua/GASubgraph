@@ -16,7 +16,7 @@ def nx_to_graphviz(nx_graph: Union[nx.DiGraph, nx.MultiDiGraph]):
             shape, peripheries = 'oval', '2'
         if cnode['type'] in ('ReturnStatement', 'ExpressionStatement', 'IdentifierDeclStatement'):
             shape = 'rectangle'
-        new_node_name = "%s: line %d # %s" % (str(ci), lineno, source)
+        new_node_name = "%s: %s" % (str(ci), source)
         graph.node(str(ci), label=new_node_name, shape=shape, peripheries=peripheries)
     if isinstance(nx_graph, nx.MultiDiGraph):
         colors = {'FLOWS_TO': 'blue', 'REACHES': 'red'}
