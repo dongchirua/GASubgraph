@@ -1,4 +1,5 @@
 import random
+import networkx as nx
 from .individual import Individual
 from torch_geometric.data import Data
 from torch_geometric.utils import to_networkx
@@ -26,16 +27,24 @@ def mutAddNeighbor(individual: Individual, origin_graph: Data, indpb):
     return individual,
 
 
-def mutRemoveBit(individual, **kwargs):
+def mutRemoveBit(individual, origin_graph: Data, **kwargs):
     nodes = individual.get_nodes()
+    if len(nodes) < 2:
+        return individual,
     sel = random.choice(nodes)
     sel_ind = nodes.index(sel)
-    n1 = nodes[:sel_ind]
-    n2 = nodes[sel_ind:]
-    if len(n1) < len(n2):  # swap
-        n1, n2 = n2, n1
-    for i in n2:
-        individual[i] = type(individual[i])(not individual[i])
+    n_nodes = nodes[:sel_ind] + nodes[sel_ind+1:]  # remove sel
+    G = to_networkx(origin_graph, to_undirected=not origin_graph.is_directed())
+    sub_graph = G.subgraph(n_nodes)
+    if origin_graph.is_directed():
+        largest_cc = max(nx.weakly_connected_components(sub_graph), key=len)
+    else:
+        largest_cc = max(nx.connected_components(sub_graph), key=len)
+
+    # remove node not in largest connected component
+    for i in nodes:
+        if i not in largest_cc:
+            individual[i] = type(individual[i])(not individual[i])
 
     return individual,
 

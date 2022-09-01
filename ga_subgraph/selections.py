@@ -12,7 +12,7 @@ except ImportError:
     from collections import Sequence
 
 
-def feasible(individual: Individual, origin_graph, K=0) -> bool:
+def feasible(individual: Individual, origin_graph: Data, K=0) -> bool:
     """Feasibility function for the individual. Returns True if feasible False
     otherwise."""
     nodes = individual.get_nodes()
