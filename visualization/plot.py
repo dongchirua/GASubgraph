@@ -35,7 +35,7 @@ def visualize_subgraph(graph: nx.Graph, ax, title="",
     nx.draw_networkx_nodes(G=graph, pos=pos, nodelist=list(graph.nodes()), node_color=colors, node_size=300, ax=ax)
     nx.draw_networkx_edges(G=graph, pos=pos, width=1, edge_color='gray', arrows=False, ax=ax)
     nx.draw_networkx_edges(G=graph, pos=pos, edgelist=list(edge_set), width=2, edge_color='black', arrows=False, ax=ax)
-    nx.draw_networkx_labels(G=graph, pos=pos, ax=ax)
+    nx.draw_networkx_labels(G=graph, pos=pos, ax=ax, font_size=17)
 
     if ax is not None:
         ax.title.set_text(title)
@@ -55,7 +55,7 @@ def visualize_explanation(sample: Data, ax=None,
     )
 
 
-def aggregate_figures(sample: Data, ga_selects, gnnex_select, subx_select,
+def aggregate_figures(sample: Data, ga_selects, subx_select, gnnex_select,
                       sample_id, origin_pred, saved_model, device):
     fig, (ax1, ax2, ax3) = plt.subplots(3, figsize=(7, 12))
     p, inv_p, fidelity = helper(ga_selects, sample, saved_model, origin_pred, device)

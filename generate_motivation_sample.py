@@ -20,24 +20,12 @@ if __name__ == "__main__":
     sample = adhoc_set.get(0)
     sample_raw, _ = adhoc_set.get_raw(0)
 
-    # graph = to_networkx(sample, to_undirected=not sample.is_directed())
-    fig, ax = plt.subplots()
-    visualize_subgraph(
-        graph=sample_raw,
-        node_set=None,
-        edge_set=None,
-        title='Motivation Sample',
-        ax=ax
-    )
-    plt.show()
-    plt.close()
-
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     from vulexp.ml_models.pl_train_module_logit import TrainingModule
     from vulexp.ml_models.gin import GIN
 
     saved_model = TrainingModule.load_from_checkpoint(model=GIN, map_location=device,
-                                                      checkpoint_path="weights/Reveal-GIN-auc_pos=0.78-optimal_t=0.560-f1=0.34-epoch=04.ckpt")
+                                                      checkpoint_path="weights/undirected_graph_GIN_pretrain.ckpt")
     saved_model.to(device)
     saved_model.eval()
     output = saved_model(sample.x.to(device), sample.edge_index.to(device), None)
@@ -62,7 +50,6 @@ if __name__ == "__main__":
         MUTPB = 0.15
         tournsize = 5
         to_undirected = True
-        # subgraph_building_method = 'split'
         subgraph_building_method = "zero_filling"
         n_generation = 150
 
@@ -80,23 +67,7 @@ if __name__ == "__main__":
     print(ga_explain, sub_explain, gnn_explainer)
     print(ga_dtime, sub_dtime, gnn_dtime)
 
-    ga_explain_prob, inv_ga_explain_prob, ga_fidelity = helper(ga_explain, sample, saved_model, pred, device)
-    sub_explain_prob, inv_sub_explain_prob, sub_fidelity = helper(sub_explain, sample, saved_model, pred, device)
-    gnn_explain_prob, inv_gnn_explain_prob, gnn_fidelity = helper(gnn_explainer, sample, saved_model, pred, device)
-    print(ga_explain_prob, sub_explain_prob, gnn_explain_prob)
-
     sample_viz = save_graph_dot(sample_raw, f'{sample_raw.name}.gv')
-
-    # fig, ax = plt.subplots()
-    # visualize_subgraph(
-    #     graph=sample_raw,
-    #     node_set=ga_explain,
-    #     edge_set=None,
-    #     title='Motivation Sample',
-    #     ax=ax
-    # )
-    # plt.show()
-    # plt.close()
 
     aggregate_figures(sample, ga_explain, sub_explain, gnn_explainer, sample_id=None,
                       origin_pred=pred, saved_model=saved_model, device=device)
