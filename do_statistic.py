@@ -54,7 +54,7 @@ def explainers(blackbox_model, classifier, sample, k_node, device, n_generation,
 
 def get_method():
     saved_model = TrainingModule.load_from_checkpoint(model=GIN, map_location=device,
-                                                      checkpoint_path="weights/Reveal-GIN-auc_pos=0.78-optimal_t=0.560-f1=0.34-epoch=04.ckpt")
+                                                      checkpoint_path="weights/undirected_graph_GIN_pretrain.ckpt")
     return saved_model
 
 

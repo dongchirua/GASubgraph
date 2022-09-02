@@ -1,18 +1,16 @@
 import numpy as np
-from deap import base, algorithms, creator, tools
+from deap import base, creator, tools
 from ga_subgraph.fitness import GraphEvaluation
 from ga_subgraph.selections import feasible, Penalty
 from ga_subgraph.generator import subgraph
 from ga_subgraph.individual import init_population, generate_individual
-from ga_subgraph.mating import cxPartialyMatched, cxCommonMatched
+from ga_subgraph.mating import cxCommonMatched
 from ga_subgraph.mutation import mutate
 from torch_geometric.utils import get_num_hops
 from operator import attrgetter
 import random
 from tqdm.auto import tqdm
 import logging
-
-
 
 logging.basicConfig(
     format='%(asctime)s | %(name)s | %(message)s',
@@ -25,6 +23,19 @@ logger = logging.getLogger('GASub')
 class GASubX(object):
     def __init__(self, blackbox, classifier, device, IndividualCls, n_gen, CXPB, MUTPB, tournsize,
                  subgraph_building_method, max_population=400, offspring_population=100) -> None:
+        """
+        :param blackbox:
+        :param classifier:
+        :param device:
+        :param IndividualCls:
+        :param n_gen:
+        :param CXPB:
+        :param MUTPB:
+        :param tournsize:
+        :param subgraph_building_method:
+        :param max_population:
+        :param offspring_population:
+        """
         self.model = blackbox
         self.device = device
         self.classifier = classifier
@@ -255,7 +266,7 @@ def varOr(population, toolbox, lambda_, cxpb, mutpb):
     offspring = []
     for _ in range(lambda_):
         op_choice = random.random()
-        if op_choice < cxpb and len(population) > 2:            # Apply crossover
+        if op_choice < cxpb and len(population) > 2:  # Apply crossover
             ind1, ind2 = list(map(toolbox.clone, random.sample(population, 2)))
             ind1, ind2 = toolbox.mate(ind1, ind2)
             del ind1.fitness.values
@@ -267,7 +278,7 @@ def varOr(population, toolbox, lambda_, cxpb, mutpb):
             ind, = toolbox.mutate(ind)
             del ind.fitness.values
             offspring.append(ind)
-        else:                           # Apply reproduction
+        else:  # Apply reproduction
             offspring.append(random.choice(population))
 
     return offspring
