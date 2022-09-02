@@ -19,7 +19,7 @@ In case you want to install yourself, below are major libs we used
     7. gensim
 
 ## How to use GAVulExplainer
-In case, you want to use our prepared example (`example.py`), unzip `data.zip`, and `weights.zip` at project level.
+In case, you want to use our prepared example (`example.py`), download `data.zip` at https://drive.google.com/file/d/1eQBfx3OAOZLJrmX2wby5S_Z_HiWW0BT9/view?usp=sharing, unzip `data.zip`, and `weights.zip` at project level.
 
 In order to ultilize `GAVulExplainer` for other tasks, please follow below instruction
 
