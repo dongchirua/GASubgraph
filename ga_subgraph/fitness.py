@@ -118,11 +118,4 @@ class GraphEvaluation(object):
         """
         coalition = [i for i, v in enumerate(chromosome) if v == 1]
         prob = self.fitness_func(selected_nodes=coalition)
-        complementary_coalition = list(set(range(self.num_nodes)) - set(coalition))
-        inv_prob = self.fitness_func(selected_nodes=complementary_coalition)
-        # return 1 / abs(inv_prob - self.origin_fitness_value) + abs(len(coalition) - self.K),
         return abs(prob - self.origin_fitness_value) + (abs(len(coalition) - self.K)),
-        # return 1 - prob + (abs(len(coalition) - self.K)),
-        # return abs(fitness_value - self.origin_fitness_value) + score_for_nodes,
-        # penalty = 0 if len(coalition) == self.K else 10
-        # return 1 / abs(inv_prob - self.origin_fitness_value) + penalty,

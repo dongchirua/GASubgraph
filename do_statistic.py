@@ -1,33 +1,28 @@
-from dataclasses import dataclass
-from random import sample
+import sys
 import time
+from dataclasses import dataclass
 from pathlib import Path
 from queue import Empty
-from typing import Optional, Set
-import sys, traceback
 
-import networkx as nx
 import torch
 import torch.multiprocessing as mp
-from tqdm.auto import tqdm
-
-from torch_geometric.loader import DataLoader
 from torch_geometric.nn import GNNExplainer
-
-from vulexp.explanation.subgraphx import SubgraphX
-from vulexp.ml_models.gin import GIN
-from vulexp.ml_models.pl_train_module_logit import TrainingModule
-from vulexp.data_models.reveal_data import Reveal
+from tqdm.auto import tqdm
 
 from ga_subgraph.explainer import GASubX
 from ga_subgraph.fitness import classifier
 from ga_subgraph.individual import Individual
 from ga_subgraph.utils import helper, extract_node_from_mask
+from vulexp.data_models.reveal_data import Reveal
+from vulexp.explanation.subgraphx import SubgraphX
+from vulexp.ml_models.gin import GIN
+from vulexp.ml_models.pl_train_module_logit import TrainingModule
 
 
-def explainers(blackbox_model, classifier, sample, k_node, device, n_generation, CXPB, MUTPB, tournsize, subgraph_building_method, **kwargs):
+def explainers(blackbox_model, classifier, sample, k_node, device, n_generation, CXPB, MUTPB, tournsize,
+               subgraph_building_method, **kwargs):
     ga_explainer = GASubX(blackbox_model, classifier, device, Individual,
-                            n_generation, CXPB, MUTPB,
+                          n_generation, CXPB, MUTPB,
                           tournsize, subgraph_building_method)
     subgraphx = SubgraphX(model=blackbox_model,
                           min_nodes=k_node, n_rollout=n_generation)
@@ -52,17 +47,17 @@ def explainers(blackbox_model, classifier, sample, k_node, device, n_generation,
 
     return ga_subgraph, ga_dt, list(sub_explainer.coalition), sub_dt, gnn_explainer_nodes, gnn_dt
 
+
 def get_method():
     saved_model = TrainingModule.load_from_checkpoint(model=GIN, map_location=device,
                                                       checkpoint_path="weights/undirected_graph_GIN_pretrain.ckpt")
     return saved_model
 
 
-def get_output_string(sample_id, num_nodes, output_y, output_pred, 
-                        ga_dtime, ga_explain_prob, inv_ga_explain_prob, ga_fidelity, 
-                        sub_dtime, sub_explain_prob, inv_sub_explain_prob, sub_fidelity,
-                        gnn_dtime, gnn_explain_prob, inv_gnn_explain_prob, gnn_fidelity):
-
+def get_output_string(sample_id, num_nodes, output_y, output_pred,
+                      ga_dtime, ga_explain_prob, inv_ga_explain_prob, ga_fidelity,
+                      sub_dtime, sub_explain_prob, inv_sub_explain_prob, sub_fidelity,
+                      gnn_dtime, gnn_explain_prob, inv_gnn_explain_prob, gnn_fidelity):
     part_01 = f'{sample_id} \t {num_nodes} \t {output_y} \t {output_pred:.4f} \t {ga_explain_prob:.4f} \t {inv_ga_explain_prob:.4f} \t {ga_fidelity:.4f} \t {ga_dtime} \t'
     part_02 = f'{sub_explain_prob:.4f} \t {inv_sub_explain_prob:.4f} \t {sub_fidelity:.4f} \t {sub_dtime} \t'
     part_03 = f'{gnn_explain_prob:.4f} \t {inv_gnn_explain_prob:.4f} \t {gnn_fidelity:.4f} \t {gnn_dtime} \t'
@@ -88,18 +83,18 @@ def print_qsize(event, precv_pipe, queue):
               "remainging can't be shown")
 
 
-def handle_output(sample_id, num_nodes, sample_label, output_prediction, lock, file, 
-                    dtime, ga_explain_prob, inv_ga_explain_prob, ga_fidelity, 
-                    sub_dtime, sub_explain_prob, inv_sub_explain_prob, sub_fidelity,
+def handle_output(sample_id, num_nodes, sample_label, output_prediction, lock, file,
+                  dtime, ga_explain_prob, inv_ga_explain_prob, ga_fidelity,
+                  sub_dtime, sub_explain_prob, inv_sub_explain_prob, sub_fidelity,
                   gnn_dtime, gnn_explain_prob, inv_gnn_explain_prob, gnn_fidelity):
     """
     Obtains the output string from `path` and `output` and writes
     to `file` by acquiring a `lock`
     """
-    output_string = get_output_string(sample_id, num_nodes, sample_label, output_prediction, 
-                                        dtime, ga_explain_prob, inv_ga_explain_prob, ga_fidelity, 
-                                        sub_dtime, sub_explain_prob, inv_sub_explain_prob, sub_fidelity,
-                                        gnn_dtime, gnn_explain_prob, inv_gnn_explain_prob, gnn_fidelity)
+    output_string = get_output_string(sample_id, num_nodes, sample_label, output_prediction,
+                                      dtime, ga_explain_prob, inv_ga_explain_prob, ga_fidelity,
+                                      sub_dtime, sub_explain_prob, inv_sub_explain_prob, sub_fidelity,
+                                      gnn_dtime, gnn_explain_prob, inv_gnn_explain_prob, gnn_fidelity)
     lock.acquire()
     file.write(output_string)
     file.flush()
@@ -130,7 +125,7 @@ def load_data(data_dir, queue, event, psend_pipe,
 
 
 def main(queue, event, model, device, lock, output_path, k_node, n_generation, CXPB, MUTPB,
-                tournsize, subgraph_building_method):
+         tournsize, subgraph_building_method):
     file = open(output_path.as_posix(), "a")
     model.eval().to(device)
     while not (event.is_set() and queue.empty()):
@@ -143,20 +138,28 @@ def main(queue, event, model, device, lock, output_path, k_node, n_generation, C
         if k_node <= graph.num_nodes:
             try:
                 predict_prod = classifier(graph, model, device)
-                ga_explain, ga_dtime, sub_explain, sub_dtime, gnn_explainer, gnn_dtime = explainers(model, classifier, graph, k_node, device, n_generation, CXPB, MUTPB,
-                                        tournsize, subgraph_building_method)
-                ga_explain_prob, inv_ga_explain_prob, ga_fidelity = helper(ga_explain, graph, model, predict_prod, device)
+                ga_explain, ga_dtime, sub_explain, \
+                sub_dtime, gnn_explainer, gnn_dtime = explainers(model, classifier, graph, k_node,
+                                                                 device,
+                                                                 n_generation, CXPB,
+                                                                 MUTPB,
+                                                                 tournsize,
+                                                                 subgraph_building_method)
+                ga_explain_prob, inv_ga_explain_prob, ga_fidelity = helper(ga_explain, graph, model, predict_prod,
+                                                                           device)
                 sub_explain_prob, inv_sub_explain_prob, sub_fidelity = helper(
                     sub_explain, graph, model, predict_prod, device)
-                gnn_explain_prob, inv_gnn_explain_prob, gnn_fidelity = helper(gnn_explainer, graph, model, predict_prod, device)
-                
+                gnn_explain_prob, inv_gnn_explain_prob, gnn_fidelity = helper(gnn_explainer, graph, model, predict_prod,
+                                                                              device)
+
                 handle_output(sample_id, graph.num_nodes, y, predict_prod, lock, file, ga_dtime, ga_explain_prob,
-                            inv_ga_explain_prob, ga_fidelity, sub_dtime, sub_explain_prob, inv_sub_explain_prob, sub_fidelity,
-                            gnn_dtime, gnn_explain_prob, inv_gnn_explain_prob, gnn_fidelity)
+                              inv_ga_explain_prob, ga_fidelity, sub_dtime, sub_explain_prob, inv_sub_explain_prob,
+                              sub_fidelity,
+                              gnn_dtime, gnn_explain_prob, inv_gnn_explain_prob, gnn_fidelity)
             except Exception as e:
                 print(f'error at {sample_id}')
                 print(e)
-            
+
         queue.task_done()
     file.close()
 
@@ -165,6 +168,7 @@ if __name__ == "__main__":
     args = sys.argv
     node_constraint = int(args[1])
     device = torch.device(args[2])
+
 
     @dataclass
     class Args:
@@ -205,9 +209,11 @@ if __name__ == "__main__":
         target=load_data,
         args=(data_dir, queue, event, psend_pipe, args.to_undirected, args.seed)
     )
-    detector_processes = [mp.Process(target=main, args=(queue, event, get_method(), device, lock, output_path, node_constraint,
-                                                        args.n_generation, args.CXPB, args.MUTPB, args.tournsize, args.subgraph_building_method))
-                          for i in range(n_handler_workers)]
+    detector_processes = [
+        mp.Process(target=main, args=(queue, event, get_method(), device, lock, output_path, node_constraint,
+                                      args.n_generation, args.CXPB, args.MUTPB, args.tournsize,
+                                      args.subgraph_building_method))
+        for i in range(n_handler_workers)]
 
     try:
         # Starting processes

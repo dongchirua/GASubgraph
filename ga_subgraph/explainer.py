@@ -24,17 +24,17 @@ class GASubX(object):
     def __init__(self, blackbox, classifier, device, IndividualCls, n_gen, CXPB, MUTPB, tournsize,
                  subgraph_building_method, max_population=400, offspring_population=100) -> None:
         """
-        :param blackbox:
-        :param classifier:
-        :param device:
-        :param IndividualCls:
-        :param n_gen:
-        :param CXPB:
-        :param MUTPB:
-        :param tournsize:
-        :param subgraph_building_method:
-        :param max_population:
-        :param offspring_population:
+        :param blackbox: PyTorch model
+        :param classifier: Function to get probability from model, example: `ga_subgraph.fitness.classifier`
+        :param device: cuda or cpu
+        :param IndividualCls: Class to store individual representation
+        :param n_gen: how many generation to perform
+        :param CXPB: crossover probabitliy
+        :param MUTPB: mutation probability
+        :param tournsize: factor control selection function
+        :param subgraph_building_method: function to construct subgraph
+        :param max_population: control max individual for every generation
+        :param offspring_population: control number of offsprint individuals
         """
         self.model = blackbox
         self.device = device

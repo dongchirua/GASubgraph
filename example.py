@@ -55,8 +55,6 @@ print(f'select sample #{sel}')
 print(f'constraint node #{k_node}')
 foo_sample = reveal_test.get(sel)
 
-# In[8]:
-
 
 output = saved_model(foo_sample.x.to(device), foo_sample.edge_index.to(device), None)
 pred = torch.sigmoid(output).item()
