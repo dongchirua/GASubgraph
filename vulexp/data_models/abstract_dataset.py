@@ -16,9 +16,11 @@ w2v_path = os.path.join(cwd, 'data/Word2Vec/li_et_al_wv')
 
 
 class BaseDataModule(LightningDataModule):
+    """
+        data -> handle() -> _loop_over_folder() -> _reader()
+    """
 
-    def __init__(self, root, over_write=False):
-        print(f'over_write: {over_write}')
+    def __init__(self, root, gtype='smt', over_write=False):
         self.root = root
         self.over_write = over_write
         self.word2vec = Word2Vec.load(w2v_path)
@@ -30,6 +32,16 @@ class BaseDataModule(LightningDataModule):
         self.count = 0
         self.feat_dim = 64
 
+        self.gtype = gtype
+        if gtype == 'cpg':
+            self.etype = (
+                'FLOWS_TO', 'CONTROLS',
+                'DEF', 'USE', 'REACHES',
+                'IS_AST_PARENT_OF'
+            )
+        elif gtype == 'smt':
+            # https://joern.readthedocs.io/en/latest/databaseOverview.html
+            self.etype = ('FLOWS_TO', 'REACHES')
         # read
         self.handle()
 
@@ -41,7 +53,7 @@ class BaseDataModule(LightningDataModule):
         :param label:
         :return:
         """
-        g = joern_to_networkx(nodes, edges)
+        g = joern_to_networkx(nodes, edges, types=self.etype)
         G = g[0]['graph']
         G.graph['label'] = label
 

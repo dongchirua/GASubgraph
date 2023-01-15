@@ -27,9 +27,9 @@ class Reveal(BaseDataModule, ABC):
     feature_dim = 64
     n_class = 2
 
-    def __init__(self, root, over_write=False, absolute_path=None, to_undirected=False,
+    def __init__(self, root, gtype, over_write=False, absolute_path=None, to_undirected=False,
                  seed: Optional[int] = None):
-        super().__init__(root, over_write)
+        super().__init__(root, gtype, over_write)
         self.absolute_path = absolute_path
         self.to_undirected = to_undirected
         self.seed = seed
@@ -50,7 +50,7 @@ class Reveal(BaseDataModule, ABC):
         for i in tqdm(target_files):
             edges = osp.join(parsed_folder, i, 'edges.csv')
             nodes = osp.join(parsed_folder, i, 'nodes.csv')
-            save_path = osp.join(processed_folder, f'{i}.gpickle')
+            save_path = osp.join(processed_folder, f'{i}_{self.gtype}.gpickle')
 
             if (self.over_write ^ (not osp.exists(save_path))) or (self.over_write and (not osp.exists(save_path))):
                 # (A xor B) or (A and B)
