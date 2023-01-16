@@ -53,7 +53,7 @@ def get_run_id(args=None):
 
 
 def train_model(config, name, custom_nn_model, save_path, custom_dataset, num_epochs=10, num_gpus=1, num_workers=8,
-                input_channel=None, n_class=None):
+                input_channel=None, n_class=None, is_solo=True):
     if input_channel is not None:
         config['input_channel'] = input_channel
     if n_class is not None:
@@ -64,16 +64,23 @@ def train_model(config, name, custom_nn_model, save_path, custom_dataset, num_ep
                "f1": "epoch/val/f1",
                "auc": "epoch/val/auc_positive"}
 
-    checkpoint_callback = pl.callbacks.ModelCheckpoint(monitor=metrics['loss'], mode='min')
+    checkpoint_callback = pl.callbacks.ModelCheckpoint(monitor=metrics['loss'], mode='min',
+                                                       auto_insert_metric_name=False,
+                                                       filename='epoch{epoch:02d}-val_loss{epoch/val/loss:.2f}')
     raytune_callback = TuneReportCallback(metrics, on="validation_end")
     rtckpt_callback = TuneReportCheckpointCallback(metrics, on="validation_end")
+
+    if is_solo:
+        callbacks = [checkpoint_callback]
+    else:
+        callbacks = [raytune_callback, rtckpt_callback, checkpoint_callback]
 
     trainer = Trainer(
         max_epochs=num_epochs,
         gpus=num_gpus,
         default_root_dir=save_path,
         logger=TensorBoardLogger(save_dir=f'{save_path}/tensor_logs', name=name),
-        callbacks=[raytune_callback, rtckpt_callback, checkpoint_callback]
+        callbacks=callbacks
     )
     trainer.fit(model)
     trainer.test(model)
@@ -98,6 +105,7 @@ def tune_ashas_scheduler(config_grid, custom_nn_model, custom_dataset,
         metric_columns=["loss", "f1", "auc"])
 
     train_fn_with_parameters = tune.with_parameters(train_model,
+                                                    num_workers=1,
                                                     save_path=store_path,
                                                     n_class=n_class,
                                                     input_channel=input_channel,

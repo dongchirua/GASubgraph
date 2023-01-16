@@ -69,7 +69,7 @@ config = {
     "dropout": 0.2,
     "hidden_channels": 64,
     "out_channels": 1,
-    "batch_size": 128,
+    "batch_size": 512,
     "threshold": 0.5,
 }
 from vulexp.ml_models.helper import train_model, get_run_id
