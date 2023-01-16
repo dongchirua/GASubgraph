@@ -52,7 +52,7 @@ def get_run_id(args=None):
     return ID
 
 
-def train_model(config, custom_nn_model, save_path, custom_dataset, num_epochs=10, num_gpus=1, num_workers=8,
+def train_model(config, name, custom_nn_model, save_path, custom_dataset, num_epochs=10, num_gpus=1, num_workers=8,
                 input_channel=None, n_class=None):
     if input_channel is not None:
         config['input_channel'] = input_channel
@@ -72,7 +72,7 @@ def train_model(config, custom_nn_model, save_path, custom_dataset, num_epochs=1
         max_epochs=num_epochs,
         gpus=num_gpus,
         default_root_dir=save_path,
-        logger=TensorBoardLogger(save_dir=f'{save_path}/tensor_logs', name=custom_nn_model.name),
+        logger=TensorBoardLogger(save_dir=f'{save_path}/tensor_logs', name=name),
         callbacks=[raytune_callback, rtckpt_callback, checkpoint_callback]
     )
     trainer.fit(model)

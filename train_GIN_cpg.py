@@ -68,7 +68,7 @@ config = {
     "num_layers": 2,
     "dropout": 0.2,
     "hidden_channels": 64,
-    "out_channels": 8,
+    "out_channels": 1,
     "batch_size": 128,
     "threshold": 0.5,
 }
@@ -77,4 +77,5 @@ cwd = os.getcwd()
 run_id = get_run_id()
 store_path = os.path.join(cwd, 'solo_train', run_id)
 
-train_model(config, GIN, store_path, reveal_dataset, input_channel=args.feat_dim, n_class=reveal_dataset.n_class)
+train_model(config, args.name, GIN, store_path, reveal_dataset,
+            input_channel=args.feat_dim, n_class=reveal_dataset.n_class)

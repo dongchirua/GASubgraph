@@ -7,7 +7,7 @@ from torch_geometric.nn import GINConv, global_max_pool
 
 class GIN(torch.nn.Module):
     def __init__(self,
-                 in_channels: int,
+                 input_channel: int,
                  hidden_channels: int,
                  num_layers: int,
                  out_channels: int = 1,
@@ -18,7 +18,7 @@ class GIN(torch.nn.Module):
 
         convs_list = [
             GINConv(nn.Sequential(
-                nn.Linear(in_channels, hidden_channels),
+                nn.Linear(input_channel, hidden_channels),
                 nn.ReLU(),
                 nn.Linear(hidden_channels, hidden_channels),
                 nn.ReLU())

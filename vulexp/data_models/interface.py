@@ -34,7 +34,7 @@ class CustomSet(Dataset, ABC):
         return os.path.join(self.absolute_path, candidate)
 
     def get_raw(self, idx: int,
-                is_transform: Callable[nx.MultiDiGraph, nx.DiGraph] = None,
+                is_transform=None,
                 check: bool = False) -> tuple[nx.DiGraph, Any]:
         # todo: check style this function
         candidate = self.data.iloc[idx]['path']

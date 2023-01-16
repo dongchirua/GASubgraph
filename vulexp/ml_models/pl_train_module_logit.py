@@ -1,6 +1,4 @@
 import os
-import pandas as pd
-import numpy as np
 import torch
 import torch.nn.functional as F
 from filelock import FileLock
@@ -131,7 +129,7 @@ class TrainingModule(LightningModule):
         return DataLoader(self.train_dataset, shuffle=True, batch_size=self.batch_size, num_workers=self.num_workers)
 
     def val_dataloader(self) -> EVAL_DATALOADERS:
-        return DataLoader(self.val_dataset, batch_size=self.batch_size, num_workers=self.num_workers)
+        return DataLoader(self.val_dataset, shuffle=True, batch_size=self.batch_size, num_workers=self.num_workers)
 
     def test_dataloader(self) -> EVAL_DATALOADERS:
         return DataLoader(self.test_dataset, batch_size=self.batch_size)
