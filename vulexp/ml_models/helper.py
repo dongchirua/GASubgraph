@@ -66,7 +66,8 @@ def train_model(config, name, custom_nn_model, save_path, custom_dataset, num_ep
 
     checkpoint_callback = pl.callbacks.ModelCheckpoint(monitor=metrics['loss'], mode='min',
                                                        auto_insert_metric_name=False,
-                                                       filename='epoch{epoch:02d}-val_loss{epoch/val/loss:.2f}')
+                                                       dirpath=f'{save_path}/checkpoint',
+                                                       filename=f'{name}-'+'epoch={epoch:02d}-loss={epoch/val/loss:.2f}')
     raytune_callback = TuneReportCallback(metrics, on="validation_end")
     rtckpt_callback = TuneReportCheckpointCallback(metrics, on="validation_end")
 

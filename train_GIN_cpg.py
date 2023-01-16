@@ -77,5 +77,5 @@ cwd = os.getcwd()
 run_id = get_run_id()
 store_path = os.path.join(cwd, 'solo_train', run_id)
 
-train_model(config, args.name, GIN, store_path, reveal_dataset,
+train_model(config, args.name, GIN, store_path, reveal_dataset, num_workers=8,
             input_channel=args.feat_dim, n_class=reveal_dataset.n_class)
