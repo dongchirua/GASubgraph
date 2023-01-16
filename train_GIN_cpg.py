@@ -56,6 +56,7 @@ config = {
     "out_channels": tune.choice([8, 16, 32]),
     "normalize": tune.choice([True, False]),
     "batch_size": tune.choice([64, 128, 512]),
+    "threshold": tune.choice([0.2, 0.5, 0.75]),
 }
 
 tune_ashas_scheduler(config, name=args.name, custom_nn_model=GIN, custom_dataset=reveal_dataset,

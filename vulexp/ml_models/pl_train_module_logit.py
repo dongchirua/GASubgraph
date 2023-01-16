@@ -29,6 +29,7 @@ class TrainingModule(LightningModule):
 
         self.learning_rate = kwargs.get('learning_rate', 0.01)
         self.weight_decay = kwargs.get('weight_decay', 5e-4)
+        self.threshold = kwargs.get('threshold', 0.5)
 
     def __str__(self):
         str(self.model)
@@ -61,7 +62,7 @@ class TrainingModule(LightningModule):
         return self.loss_and_pred(batch, 'val')
 
     @staticmethod
-    def compute_auc(outputs):
+    def compute_auc(outputs, thresholds):
         preds = []
         targets = []
 
@@ -70,14 +71,10 @@ class TrainingModule(LightningModule):
             targets += output['targets']
 
         fpr, tpr, thresholds = roc_curve(y_true=targets, y_score=preds, pos_label=1)
-        i = np.arange(len(tpr))
-        roc = pd.DataFrame({'tf': pd.Series(tpr - (1 - fpr), index=i), 'threshold': pd.Series(thresholds, index=i)})
-        optimal_threshold = roc.iloc[(roc.tf - 0).abs().argsort()[:1]]['threshold'].tolist()[0]
-
         auc_positive = auc(fpr, tpr)
         auc_macro = roc_auc_score(y_true=targets, y_score=preds)
-        meta_info = {'tpr': tpr, 'fpr': fpr, 'thresholds': thresholds}
-        return auc_positive, auc_macro, optimal_threshold, meta_info
+        meta_info = {'tpr': tpr, 'fpr': fpr}
+        return auc_positive, auc_macro, meta_info
 
     def validation_epoch_end(self, outputs):
         avg_loss = torch.stack([x["loss"] for x in outputs]).mean()
@@ -89,14 +86,13 @@ class TrainingModule(LightningModule):
             preds += output['preds']
             targets += output['targets']
 
-        auc_positive, auc_macro, optimal_threshold, _ = self.compute_auc(outputs)  # ignore target, preds
-        f1 = self.use_threshold(preds, targets, optimal_threshold)
+        auc_positive, auc_macro, _ = TrainingModule.compute_auc(outputs, self.threshold)
+        f1 = self.use_threshold(preds, targets, self.threshold)
 
         self.log("epoch/val/loss", avg_loss)
         self.log("epoch/val/auc_positive", auc_positive)
         self.log("epoch/val/auc_macro", auc_macro)
         self.log("epoch/val/f1", f1)
-        self.log("epoch/val/optimal_threshold", optimal_threshold if optimal_threshold > 0 else 0.5)
 
     def test_epoch_end(self, outputs):
         preds = []
@@ -106,8 +102,9 @@ class TrainingModule(LightningModule):
             preds += output['preds']
             targets += output['targets']
 
-        auc_positive, auc_macro, optimal_threshold, _ = self.compute_auc(outputs)
-        f1 = self.use_threshold(preds, targets, optimal_threshold)
+        auc_positive, auc_macro, _ = TrainingModule.compute_auc(outputs, self.threshold)
+        f1 = self.use_threshold(preds, targets, self.threshold)
+
         self.log("epoch/test/auc_positive", auc_positive)
         self.log("epoch/test/auc_macro", auc_macro)
         self.log("epoch/test/f1", f1)

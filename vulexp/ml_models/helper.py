@@ -60,11 +60,11 @@ def train_model(config, custom_nn_model, save_path, custom_dataset, num_epochs=1
         config['n_class'] = n_class
     model = TrainingModule(custom_nn_model, custom_dataset, num_workers=num_workers, **config)
 
-    metrics = {"loss": "ptl/val_loss",
-               "f1": "ptl/val_f1",
-               "mean_accuracy": "ptl/val_accuracy"}
+    metrics = {"loss": "epoch/val/loss",
+               "f1": "epoch/val/f1",
+               "auc": "epoch/val/auc_positive"}
 
-    checkpoint_callback = pl.callbacks.ModelCheckpoint(monitor="ptl/val_loss", mode='min')
+    checkpoint_callback = pl.callbacks.ModelCheckpoint(monitor=metrics['loss'], mode='min')
     raytune_callback = TuneReportCallback(metrics, on="validation_end")
     rtckpt_callback = TuneReportCheckpointCallback(metrics, on="validation_end")
 
@@ -95,7 +95,7 @@ def tune_ashas_scheduler(config_grid, custom_nn_model, custom_dataset,
 
     reporter = CLIReporter(
         parameter_columns=list(config_grid.keys()),
-        metric_columns=["loss", "mean_accuracy", "f1"])
+        metric_columns=["loss", "f1", "auc"])
 
     train_fn_with_parameters = tune.with_parameters(train_model,
                                                     save_path=store_path,
