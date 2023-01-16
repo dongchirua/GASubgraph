@@ -46,7 +46,7 @@ class NVD(BaseDataModule):
                     if max_line_number <= min_line_number_acceptable:
                         raise Exception('data has less then 2 line of code')
                     G = relabel_nodes(G)
-                    self._serialize_n_count_graph(G, save_path)
+                    _serialize_n_count_graph(G, save_path)
                 except Exception as e:
                     self.error_files.append((file_name, str(e)))
 

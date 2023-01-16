@@ -39,13 +39,11 @@ class TrainingModule(LightningModule):
     def loss_and_pred(self, batch, stage=None):
         out = self(batch.x, batch.edge_index, batch.batch)
         out = out.squeeze()
-        
+
         pred = torch.sigmoid(out)
         target = batch.y.float().squeeze()
 
         loss = self.criterion(input=out, target=target)
-
-        
 
         if stage:
             self.log(f"batch/{stage}/loss", loss, on_step=True, on_epoch=False, logger=True)
@@ -72,9 +70,9 @@ class TrainingModule(LightningModule):
             targets += output['targets']
 
         fpr, tpr, thresholds = roc_curve(y_true=targets, y_score=preds, pos_label=1)
-        i = np.arange(len(tpr)) 
-        roc = pd.DataFrame({'tf' : pd.Series(tpr-(1-fpr), index=i), 'threshold' : pd.Series(thresholds, index=i)})
-        optimal_threshold = roc.iloc[(roc.tf-0).abs().argsort()[:1]]['threshold'].tolist()[0]
+        i = np.arange(len(tpr))
+        roc = pd.DataFrame({'tf': pd.Series(tpr - (1 - fpr), index=i), 'threshold': pd.Series(thresholds, index=i)})
+        optimal_threshold = roc.iloc[(roc.tf - 0).abs().argsort()[:1]]['threshold'].tolist()[0]
 
         auc_positive = auc(fpr, tpr)
         auc_macro = roc_auc_score(y_true=targets, y_score=preds)
@@ -100,7 +98,6 @@ class TrainingModule(LightningModule):
         self.log("epoch/val/f1", f1)
         self.log("epoch/val/optimal_threshold", optimal_threshold if optimal_threshold > 0 else 0.5)
 
-
     def test_epoch_end(self, outputs):
         preds = []
         targets = []
@@ -114,7 +111,6 @@ class TrainingModule(LightningModule):
         self.log("epoch/test/auc_positive", auc_positive)
         self.log("epoch/test/auc_macro", auc_macro)
         self.log("epoch/test/f1", f1)
-
 
     def test_step(self, batch: Batch, batch_idx: int):
         return self.loss_and_pred(batch, 'test')

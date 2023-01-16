@@ -11,9 +11,10 @@ from vulexp.data_models.helpers import convert_single_graph, from_networkx
 
 
 class CustomSet(Dataset, ABC):
-    def __init__(self, data: pd.DataFrame, absolute_path=None, to_undirected=False):
+    def __init__(self, data: pd.DataFrame, gtype, absolute_path=None, to_undirected=False):
         super().__init__()
         self.data = data.copy(deep=True)
+        self.gtype = gtype
         self.data.index = range(0, len(data))
         self.absolute_path = absolute_path
         self.to_undirected = to_undirected
@@ -38,9 +39,11 @@ class CustomSet(Dataset, ABC):
         # todo: check style this function
         candidate = self.data.iloc[idx]['path']
         if self.absolute_path is not None:
-            raw_g = nx.read_gpickle(os.path.join(self.absolute_path, candidate))
-        else:
-            raw_g = nx.read_gpickle(candidate)
+            candidate = os.path.join(self.absolute_path, candidate)
+        # using candidate, extract path to pickle file
+        candidate_split = candidate.split('/')
+        f = candidate_split[:-4] + ['processed', self.gtype] + [candidate_split[-1] + '.gpickle']
+        raw_g = nx.read_gpickle('/'.join(f))
         if is_transform is not None:
             raw_g = convert_single_graph(raw_g, self.to_undirected)
         if check:

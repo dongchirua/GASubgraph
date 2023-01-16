@@ -23,6 +23,16 @@ cwd = os.getcwd()
 w2v_path = os.path.join(cwd, 'data/Word2Vec/li_et_al_wv')  # should be vulnerability-explanation/data/...
 
 
+def do_oversampling(df: pd.DataFrame, seed) -> pd.DataFrame:
+    # due to imbalance, oversampling to use
+    max_size = df['gt'].value_counts().max()
+    lst = [df]
+    for class_index, group in df.groupby('gt'):
+        lst.append(group.sample(max_size - len(group), replace=True, random_state=seed))
+    over_sampling_data = pd.concat(lst)
+    return over_sampling_data
+
+
 class Reveal(BaseDataModule, ABC):
     feature_dim = 64
     n_class = 2
@@ -33,6 +43,7 @@ class Reveal(BaseDataModule, ABC):
         self.absolute_path = absolute_path
         self.to_undirected = to_undirected
         self.seed = seed
+        self.gtype = gtype
 
     def _loop_over_folder(self, raw_folder, parsed_folder, processed_folder, label=0, min_line_number_acceptable=2):
         """
@@ -43,6 +54,9 @@ class Reveal(BaseDataModule, ABC):
         :param min_line_number_acceptable: if a program has the number line of code is smaller this, reject it
         :return:
         """
+        error_files = []
+        error_reasons = []
+        success_files = []
         target_files = []
         for (_, _, filenames) in walk(raw_folder):
             target_files.extend(filenames)
@@ -50,7 +64,7 @@ class Reveal(BaseDataModule, ABC):
         for i in tqdm(target_files):
             edges = osp.join(parsed_folder, i, 'edges.csv')
             nodes = osp.join(parsed_folder, i, 'nodes.csv')
-            save_path = osp.join(processed_folder, f'{i}_{self.gtype}.gpickle')
+            save_path = osp.join(processed_folder, self.gtype, f'{i}.gpickle')
 
             if (self.over_write ^ (not osp.exists(save_path))) or (self.over_write and (not osp.exists(save_path))):
                 # (A xor B) or (A and B)
@@ -64,11 +78,14 @@ class Reveal(BaseDataModule, ABC):
                     if max_line_number <= min_line_number_acceptable:
                         raise Exception('data has less then 2 line of code')
                     G = relabel_nodes(G)
-                    self._serialize_n_count_graph(G, save_path)
+                    BaseDataModule._serialize_n_count_graph(G, save_path)
+                    success_files.append(osp.join(raw_folder, i))
                 except Exception as e:
-                    raise e
+                    error_files.append(osp.join(raw_folder, i))
+                    error_reasons.append(str(e))
             else:
                 print('skip generate new file')
+        return success_files, error_files, error_reasons
 
     def handle(self):
         raw_folder = osp.join(self.root, 'raw', 'raw_data')
@@ -80,57 +97,82 @@ class Reveal(BaseDataModule, ABC):
 
         processed_folder = osp.join(self.root, 'processed')
 
-        self._loop_over_folder(non_raw_folder, non_parsed_folder, processed_folder, label=0)
-        self._loop_over_folder(vul_raw_folder, vul_parsed_folder, processed_folder, label=1)
-
         if self.over_write:
-            self.map_id_to_graph_file = pd.DataFrame(self.map_id_to_graph_file, columns=['id', 'path', 'gt'])
-            self.map_id_to_graph_file.to_csv(osp.join(self.root, 'map_id_to_graph.tsv'), sep='\t', index=False)
-            self.error_files = pd.DataFrame(self.error_files, columns=['file_error', 'reason'])
-            self.error_files.to_csv(osp.join(self.root, 'error_file.tsv'), sep='\t', index=False)
+            df_error_files = pd.DataFrame(columns=['path', 'reason', 'gt'])
+            df_success_files = pd.DataFrame(columns=['path', 'gt'])
+
+            a0, b0, c0 = self._loop_over_folder(non_raw_folder, non_parsed_folder, processed_folder, label=0)
+            a1, b1, c1 = self._loop_over_folder(vul_raw_folder, vul_parsed_folder, processed_folder, label=1)
+
+            df_error_files['path'] = b0 + b1
+            df_error_files['reason'] = c0 + c1
+            df_error_files['gt'] = [0] * len(b0) + [1] * len(b1)
+            df_success_files['path'] = a0 + a1
+            df_success_files['gt'] = [0] * len(a0) + [1] * len(a1)
+
+            df_error_files.to_csv(osp.join(self.root, 'error_files.tsv'), sep='\t', index=False)
+            df_success_files.to_csv(osp.join(self.root, 'success_files.tsv'), sep='\t', index=False)
+            self.map_id_to_graph_file = df_success_files
 
         else:
-            self.map_id_to_graph_file = pd.read_csv(osp.join(self.root, 'map_id_to_graph.tsv'), sep='\t')
-            self.error_files = pd.read_csv(osp.join(self.root, 'error_file.tsv'), sep='\t')
+            self.map_id_to_graph_file = pd.read_csv(osp.join(self.root, 'success_files.tsv'), sep='\t')
+            # self.error_files = pd.read_csv(osp.join(self.root, 'error_files.tsv'), sep='\t')
 
     def generate_train_test(self):
+
         seed = self.seed
 
-        self.map_id_to_graph_file.index = range(0, len(self.map_id_to_graph_file.index))
+        if not osp.isfile(osp.join(self.root, 'split_sets.tsv')):
 
-        non_data = self.map_id_to_graph_file[self.map_id_to_graph_file['gt'] == 0]
-        vul_data = self.map_id_to_graph_file[self.map_id_to_graph_file['gt'] == 1]
+            self.map_id_to_graph_file.index = range(0, len(self.map_id_to_graph_file.index))
 
-        # test
-        ratio = len(vul_data) / len(self.map_id_to_graph_file)
-        test_01 = vul_data.sample(int(ratio * len(vul_data)), random_state=seed)
-        test_02 = non_data.sample(int(ratio * len(non_data)), random_state=seed)
-        test_set = pd.concat([test_01, test_02])
-        # remove test from database
-        non_data = non_data.drop(test_set[test_set['gt'] == 0].index)
-        vul_data = vul_data.drop(test_set[test_set['gt'] == 1].index)
+            non_data = self.map_id_to_graph_file[self.map_id_to_graph_file['gt'] == 0]
+            vul_data = self.map_id_to_graph_file[self.map_id_to_graph_file['gt'] == 1]
 
-        # val
-        val_ratio = 0.1
-        val_01 = vul_data.sample(int(val_ratio * len(vul_data)), random_state=seed)
-        val_02 = non_data.sample(int(val_ratio * len(non_data)), random_state=seed)
-        val_set = pd.concat([val_01, val_02])
-        # remove val from database
-        non_data = non_data.drop(val_set[val_set['gt'] == 0].index)
-        vul_data = vul_data.drop(val_set[val_set['gt'] == 1].index)
+            # test
+            ratio = len(vul_data) / len(self.map_id_to_graph_file)
+            test_01 = vul_data.sample(int(ratio * len(vul_data)), random_state=seed)
+            test_02 = non_data.sample(int(ratio * len(non_data)), random_state=seed)
+            test_set = pd.concat([test_01, test_02])
+            # remove test from database
+            non_data = non_data.drop(test_set[test_set['gt'] == 0].index)
+            vul_data = vul_data.drop(test_set[test_set['gt'] == 1].index)
 
-        # train
-        train_set = pd.concat([non_data, vul_data])
-        # due to imbalance, oversampling to use
-        max_size = train_set['gt'].value_counts().max()
-        lst = [train_set]
-        for class_index, group in train_set.groupby('gt'):
-            lst.append(group.sample(max_size - len(group), replace=True, random_state=seed))
-        over_sampling_data = pd.concat(lst)
+            # val
+            val_ratio = 0.1
+            val_01 = vul_data.sample(int(val_ratio * len(vul_data)), random_state=seed)
+            val_02 = non_data.sample(int(val_ratio * len(non_data)), random_state=seed)
+            val_set = pd.concat([val_01, val_02])
+            # remove val from database
+            non_data = non_data.drop(val_set[val_set['gt'] == 0].index)
+            vul_data = vul_data.drop(val_set[val_set['gt'] == 1].index)
 
-        assert len(pd.merge(train_set, test_set, on=['path', 'gt'])) == 0, 'data leakage!'
-        assert len(pd.merge(train_set, val_set, on=['path', 'gt'])) == 0, 'data leakage!'
+            # train
+            train_set = pd.concat([non_data, vul_data])
+            # due to imbalance, oversampling to use
+            over_sampling_data = do_oversampling(train_set, seed)
 
-        return CustomSet(over_sampling_data, self.absolute_path, self.to_undirected), \
-               CustomSet(val_set, self.absolute_path, self.to_undirected), \
-               CustomSet(test_set, self.absolute_path, self.to_undirected)
+            assert len(pd.merge(train_set, test_set, on=['path', 'gt'])) == 0, 'data leakage!'
+            assert len(pd.merge(train_set, val_set, on=['path', 'gt'])) == 0, 'data leakage!'
+
+            tmp = self.map_id_to_graph_file.merge(test_set, how='left', on=['path', 'gt'], indicator=True)
+            tmp['subset'] = ''
+            tmp.loc[tmp._merge == 'both', 'subset'] = 'test'
+            tmp = tmp[['path', 'gt', 'subset']]
+            tmp = tmp.merge(train_set, how='left', on=['path', 'gt'], indicator=True)
+            tmp.loc[tmp._merge == 'both', 'subset'] = 'train'
+            tmp = tmp[['path', 'gt', 'subset']]
+            tmp = tmp.merge(val_set, how='left', on=['path', 'gt'], indicator=True)
+            tmp.loc[tmp._merge == 'both', 'subset'] = 'val'
+            tmp = tmp[['path', 'gt', 'subset']]
+            tmp.to_csv(osp.join(self.root, 'split_sets.tsv'), sep='\t', index=False)
+        else:
+            df = pd.read_csv(osp.join(self.root, 'split_sets.tsv'), sep='\t')
+            train_set = df[df.subset == 'train']
+            test_set = df[df.subset == 'test']
+            val_set = df[df.subset == 'val']
+            over_sampling_data = do_oversampling(train_set, seed)
+
+        return CustomSet(over_sampling_data, self.gtype, self.absolute_path, self.to_undirected), \
+            CustomSet(val_set, self.gtype, self.absolute_path, self.to_undirected), \
+            CustomSet(test_set, self.gtype, self.absolute_path, self.to_undirected)

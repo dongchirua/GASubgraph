@@ -24,7 +24,8 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 class Args:
     seed: int = 27  # Random seed.
     to_undirected = False
-    gtype = 'cpg'  # cpg or smt
+    gtype = 'cpg'  # cpg or smg
+    over_write = True
 
 
 args = Args()
@@ -35,6 +36,10 @@ np.random.seed(args.seed)
 random.seed(args.seed)
 
 data_dir = 'data/reveal/'
-reveal_dataset = Reveal(data_dir, to_undirected=args.to_undirected, seed=args.seed, gtype=args.gtype)
+reveal_dataset = Reveal(data_dir,
+                        over_write=args.over_write, to_undirected=args.to_undirected,
+                        seed=args.seed, gtype=args.gtype)
 
 reveal_train, reveal_val, reveal_test = reveal_dataset.generate_train_test()
+
+foo = reveal_train.get(0)
