@@ -49,16 +49,32 @@ reveal_dataset = Reveal(data_dir, absolute_path=absolute_path,
 
 # reveal_train, reveal_val, reveal_test = reveal_dataset.generate_train_test()
 
-config = {
-    "num_layers": tune.randint(0, 5),
-    "dropout": tune.uniform(0.05, 0.4),
-    "hidden_channels": tune.choice([16, 32, 64, 128]),
-    "out_channels": tune.choice([8, 16, 32]),
-    "normalize": tune.choice([True, False]),
-    "batch_size": tune.choice([64, 128, 512]),
-    "threshold": tune.choice([0.2, 0.5, 0.75]),
-}
+# config = {
+#     "num_layers": tune.randint(0, 5),
+#     "dropout": tune.uniform(0.05, 0.4),
+#     "hidden_channels": tune.choice([16, 32, 64, 128]),
+#     "out_channels": tune.choice([8, 16, 32]),
+#     "normalize": tune.choice([True, False]),
+#     "batch_size": tune.choice([64, 128, 512]),
+#     "threshold": tune.choice([0.2, 0.5, 0.75]),
+# }
+#
+# tune_ashas_scheduler(config, name=args.name, custom_nn_model=GIN, custom_dataset=reveal_dataset,
+#                      max_epochs=args.n_epoch, n_class=reveal_dataset.n_class, gpus_per_trial=n_gpu,
+#                      input_channel=args.feat_dim)
 
-tune_ashas_scheduler(config, name=args.name, custom_nn_model=GIN, custom_dataset=reveal_dataset,
-                     max_epochs=args.n_epoch, n_class=reveal_dataset.n_class, gpus_per_trial=n_gpu,
-                     input_channel=args.feat_dim)
+
+config = {
+    "num_layers": 2,
+    "dropout": 0.2,
+    "hidden_channels": 64,
+    "out_channels": 8,
+    "batch_size": 128,
+    "threshold": 0.5,
+}
+from vulexp.ml_models.helper import train_model, get_run_id
+cwd = os.getcwd()
+run_id = get_run_id()
+store_path = os.path.join(cwd, 'solo_train', run_id)
+
+train_model(config, GIN, store_path, reveal_dataset, input_channel=args.feat_dim, n_class=reveal_dataset.n_class)
