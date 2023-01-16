@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-
+import os
 import random
 from dataclasses import dataclass
 import numpy as np
@@ -16,16 +16,21 @@ from vulexp.data_models.reveal_data import Reveal
 from vulexp.explanation.subgraphx import SubgraphX
 from vulexp.ml_models.pl_train_module_logit import TrainingModule
 from vulexp.ml_models.gin import GIN
+from ray import tune
+from vulexp.ml_models.helper import tune_ashas_scheduler
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
+n_gpu = 1 if device == 'cuda' else 0
 
 @dataclass
 class Args:
     seed: int = 27  # Random seed.
     to_undirected = False
     gtype = 'cpg'  # cpg or smg
-    over_write = True
+    over_write = False
+    n_epoch = 101
+    name = 'GIN_CPG'
+    feat_dim = 133  # number of node feature
 
 
 args = Args()
@@ -36,10 +41,23 @@ np.random.seed(args.seed)
 random.seed(args.seed)
 
 data_dir = 'data/reveal/'
-reveal_dataset = Reveal(data_dir,
+
+absolute_path = os.getcwd()
+reveal_dataset = Reveal(data_dir, absolute_path=absolute_path,
                         over_write=args.over_write, to_undirected=args.to_undirected,
                         seed=args.seed, gtype=args.gtype)
 
-reveal_train, reveal_val, reveal_test = reveal_dataset.generate_train_test()
+# reveal_train, reveal_val, reveal_test = reveal_dataset.generate_train_test()
 
-foo = reveal_train.get(0)
+config = {
+    "num_layers": tune.randint(0, 5),
+    "dropout": tune.uniform(0.05, 0.4),
+    "hidden_channels": tune.choice([16, 32, 64, 128]),
+    "out_channels": tune.choice([8, 16, 32]),
+    "normalize": tune.choice([True, False]),
+    "batch_size": tune.choice([64, 128, 512]),
+}
+
+tune_ashas_scheduler(config, name=args.name, custom_nn_model=GIN, custom_dataset=reveal_dataset,
+                     max_epochs=args.n_epoch, n_class=reveal_dataset.n_class, gpus_per_trial=n_gpu,
+                     input_channel=args.feat_dim)

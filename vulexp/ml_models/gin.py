@@ -11,7 +11,7 @@ class GIN(torch.nn.Module):
                  hidden_channels: int,
                  num_layers: int,
                  out_channels: int = 1,
-                 dropout: float = 0.5, **kwargs):
+                 dropout: float = 0.3, **kwargs):
         super(GIN, self).__init__()
 
         self.dropout = dropout

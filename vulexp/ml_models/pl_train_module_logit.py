@@ -157,5 +157,4 @@ class TrainingModule(LightningModule):
         out = self.loss_and_pred(samples)
         preds = out['preds']
         targets = out['targets']
-        f1 = self.use_threshold(preds, targets)
-        print('f1', f1)
+        f1 = self.use_threshold(preds, targets, threshold)

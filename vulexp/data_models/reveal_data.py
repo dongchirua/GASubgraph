@@ -34,7 +34,7 @@ def do_oversampling(df: pd.DataFrame, seed) -> pd.DataFrame:
 
 
 class Reveal(BaseDataModule, ABC):
-    feature_dim = 64
+    # feature_dim = 64
     n_class = 2
 
     def __init__(self, root, gtype, over_write=False, absolute_path=None, to_undirected=False,
