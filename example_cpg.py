@@ -50,7 +50,7 @@ from vulexp.ml_models.pl_train_module_logit import TrainingModule
 from vulexp.ml_models.gin import GIN
 
 saved_model = TrainingModule.load_from_checkpoint(model=GIN, map_location=device,
-                                                  checkpoint_path="solo_train/202301171316_88cc311_add_click/checkpoint/GIN_CPG-epoch=00-loss=0.57-f1=0.2576419213973799.ckpt")
+                                                  checkpoint_path="solo_train/202301171249_88cc311_add_click/checkpoint/GIN_CPG-epoch=04-loss=0.57-f1=0.29189189189189185.ckpt")
 saved_model.to(device)
 saved_model.eval()
 
