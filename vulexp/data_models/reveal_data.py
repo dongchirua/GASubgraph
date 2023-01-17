@@ -169,7 +169,7 @@ class Reveal(BaseDataModule, ABC):
         else:
             df = pd.read_csv(osp.join(self.root, 'split_sets.tsv'), sep='\t')
             train_set = df[df.subset == 'train']
-            test_set = df[df.subset == 'test']
+            test_set = df[df.subset == 'test'].sort_values(by=['path', 'gt'], ascending=False)
             val_set = df[df.subset == 'val']
             over_sampling_data = do_oversampling(train_set, seed)
 
