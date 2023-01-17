@@ -116,7 +116,7 @@ def tune_ashas_scheduler(config_grid, custom_nn_model, custom_dataset,
                                                     custom_dataset=custom_dataset,
                                                     num_epochs=max_epochs,
                                                     num_gpus=gpus_per_trial)
-    resources_per_trial = {"cpu": 1, "gpu": gpus_per_trial}
+    resources_per_trial = {"gpu": gpus_per_trial/2}  # 2 concurrencies
 
     analysis = tune.run(train_fn_with_parameters,
                         resources_per_trial=resources_per_trial,
@@ -127,8 +127,8 @@ def tune_ashas_scheduler(config_grid, custom_nn_model, custom_dataset,
                         scheduler=scheduler,
                         local_dir=store_path,
                         progress_reporter=reporter,
-                        keep_checkpoints_num=2,
-                        checkpoint_score_attr="min-loss",
+                        keep_checkpoints_num=1,
+                        checkpoint_score_attr="f1",
                         name=name)
 
     print("Best hyperparameters found were: ", analysis.best_config)
