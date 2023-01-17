@@ -118,7 +118,7 @@ def tune_ashas_scheduler(config_grid, custom_nn_model, custom_dataset,
                                                     num_gpus=gpus_per_trial)
     resources_per_trial = {"cpu": 1, "gpu": gpus_per_trial}
 
-    analysis = tune.run(train_fn_with_parameters,
+    analysis = tune.run(train_fn_with_parameters, resume=True,
                         resources_per_trial=resources_per_trial,
                         metric="loss",
                         mode="min",
