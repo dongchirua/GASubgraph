@@ -60,14 +60,14 @@ def train_model(config, name, custom_nn_model, save_path, custom_dataset, num_ep
         config['n_class'] = n_class
     model = TrainingModule(custom_nn_model, custom_dataset, num_workers=num_workers, **config)
 
-    metrics = {"loss": "epoch/val/loss",
-               "f1": "epoch/val/f1",
-               "auc": "epoch/val/auc_positive"}
+    metrics = {"loss": "val/loss",
+               "f1": "val/f1",
+               "auc": "val/auc_positive"}
 
     checkpoint_callback = pl.callbacks.ModelCheckpoint(monitor=metrics['loss'], mode='min',
                                                        auto_insert_metric_name=False,
                                                        dirpath=f'{save_path}/checkpoint',
-                                                       filename=f'{name}-'+'epoch={epoch:02d}-loss={epoch/val/loss:.2f}')
+                                                       filename=f'{name}-'+"epoch={epoch:02d}-loss={val/loss:.2f}-f1={val/f1}")
     raytune_callback = TuneReportCallback(metrics, on="validation_end")
     rtckpt_callback = TuneReportCheckpointCallback(metrics, on="validation_end")
 

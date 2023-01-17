@@ -87,10 +87,10 @@ class TrainingModule(LightningModule):
         auc_positive, auc_macro, _ = TrainingModule.compute_auc(outputs, self.threshold)
         f1 = self.use_threshold(preds, targets, self.threshold)
 
-        self.log("epoch/val/loss", avg_loss)
-        self.log("epoch/val/auc_positive", auc_positive)
-        self.log("epoch/val/auc_macro", auc_macro)
-        self.log("epoch/val/f1", f1)
+        self.log("val/loss", avg_loss)
+        self.log("val/auc_positive", auc_positive)
+        self.log("val/auc_macro", auc_macro)
+        self.log("val/f1", f1)
 
     def test_epoch_end(self, outputs):
         preds = []
@@ -103,9 +103,9 @@ class TrainingModule(LightningModule):
         auc_positive, auc_macro, _ = TrainingModule.compute_auc(outputs, self.threshold)
         f1 = self.use_threshold(preds, targets, self.threshold)
 
-        self.log("epoch/test/auc_positive", auc_positive)
-        self.log("epoch/test/auc_macro", auc_macro)
-        self.log("epoch/test/f1", f1)
+        self.log("test/auc_positive", auc_positive)
+        self.log("test/auc_macro", auc_macro)
+        self.log("test/f1", f1)
 
     def test_step(self, batch: Batch, batch_idx: int):
         return self.loss_and_pred(batch, 'test')
