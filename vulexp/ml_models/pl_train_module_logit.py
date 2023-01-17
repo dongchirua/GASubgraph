@@ -115,7 +115,10 @@ class TrainingModule(LightningModule):
 
     @staticmethod
     def serialize(data_set):
-        with FileLock(os.path.expanduser("./data_undirected.lock")):
+        # FileLock here because multiple workers will want to
+        # download data, and this may cause overwrites since
+        # DataLoader is not threadsafe.
+        with FileLock(os.path.expanduser("./.data_serialize.lock")):
             return data_set.generate_train_test()
 
     def prepare_data(self):
