@@ -105,7 +105,7 @@ def tune_ashas_scheduler(config_grid, custom_nn_model, custom_dataset,
         metric_columns=["loss", "f1", "auc"])
 
     train_fn_with_parameters = tune.with_parameters(train_model,
-                                                    num_workers=1,
+                                                    num_workers=1, is_solo=False, name=name,
                                                     save_path=store_path,
                                                     n_class=n_class,
                                                     input_channel=input_channel,

@@ -150,3 +150,5 @@ dataset
 ray_logs
 data
 pre_train
+/solo_train/
+/raytune_feature/

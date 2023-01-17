@@ -18,10 +18,9 @@ from vulexp.explanation.subgraphx import SubgraphX
 from vulexp.ml_models.pl_train_module_logit import TrainingModule
 from vulexp.ml_models.gin import GIN
 from ray import tune
-from vulexp.ml_models.helper import tune_ashas_scheduler
+from vulexp.ml_models.train_helper import tune_ashas_scheduler
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-n_gpu = 1 if device == 'cuda' else 0
 
 
 @dataclass
@@ -42,7 +41,8 @@ torch.manual_seed(args.seed)
 np.random.seed(args.seed)
 random.seed(args.seed)
 
-data_dir = 'data/reveal/'
+cwd = os.getcwd()
+data_dir = f'{cwd}/data/reveal/'
 
 absolute_path = os.getcwd()
 reveal_dataset = Reveal(data_dir, absolute_path=absolute_path,
@@ -52,19 +52,6 @@ reveal_dataset = Reveal(data_dir, absolute_path=absolute_path,
 
 # reveal_train, reveal_val, reveal_test = reveal_dataset.generate_train_test()
 
-# config = {
-#     "num_layers": tune.randint(0, 5),
-#     "dropout": tune.uniform(0.05, 0.4),
-#     "hidden_channels": tune.choice([16, 32, 64, 128]),
-#     "out_channels": tune.choice([8, 16, 32]),
-#     "normalize": tune.choice([True, False]),
-#     "batch_size": tune.choice([64, 128, 512]),
-#     "threshold": tune.choice([0.2, 0.5, 0.75]),
-# }
-#
-# tune_ashas_scheduler(config, name=args.name, custom_nn_model=GIN, custom_dataset=reveal_dataset,
-#                      max_epochs=args.n_epoch, n_class=reveal_dataset.n_class, gpus_per_trial=n_gpu,
-#                      input_channel=args.feat_dim)
 
 @click.command()
 @click.option('--mode', default='solo', help='Solo train or Tune params.')
@@ -78,13 +65,29 @@ def run_mode(mode):
             "batch_size": 512,
             "threshold": 0.5,
         }
-        from vulexp.ml_models.helper import train_model, get_run_id
-        cwd = os.getcwd()
+        from vulexp.ml_models.train_helper import train_model, get_run_id
         run_id = get_run_id()
         store_path = os.path.join(cwd, 'solo_train', run_id)
 
         train_model(config, args.name, GIN, store_path, reveal_dataset, num_workers=8, num_epochs=args.n_epoch,
                     input_channel=args.feat_dim, n_class=reveal_dataset.n_class)
+
+    if mode == 'tune':
+        config = {
+            "num_layers": tune.randint(1, 5),
+            "dropout": tune.uniform(0.1, 0.4),
+            "hidden_channels": tune.choice([16, 32, 64, 128]),
+            "batch_size": tune.choice([64, 128, 512, 1024]),
+            "threshold": tune.choice([0.2, 0.5, 0.75]),
+            "learning_rate": tune.choice([1e-2, 1e-3, 3e-4, 4e-5]),
+            "weight_decay": tune.choice([1e-2, 1e-3, 3e-4, 4e-5]),
+        }
+        n_gpu = 1 if device.type == 'cuda' else 0
+
+        tune_ashas_scheduler(config, name=args.name, custom_nn_model=GIN, custom_dataset=reveal_dataset,
+                             max_epochs=args.n_epoch, n_class=reveal_dataset.n_class,
+                             gpus_per_trial=n_gpu,
+                             input_channel=args.feat_dim)
 
 
 if __name__ == '__main__':
