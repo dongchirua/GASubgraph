@@ -6,6 +6,7 @@ import random
 from dataclasses import dataclass
 import numpy as np
 import torch
+import click
 from torch_geometric.nn import GNNExplainer
 from ga_subgraph.utils import extract_node_from_mask
 from visualization.plot import aggregate_figures
@@ -21,6 +22,7 @@ from vulexp.ml_models.helper import tune_ashas_scheduler
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 n_gpu = 1 if device == 'cuda' else 0
+
 
 @dataclass
 class Args:
@@ -47,6 +49,7 @@ reveal_dataset = Reveal(data_dir, absolute_path=absolute_path,
                         over_write=args.over_write, to_undirected=args.to_undirected,
                         seed=args.seed, gtype=args.gtype)
 
+
 # reveal_train, reveal_val, reveal_test = reveal_dataset.generate_train_test()
 
 # config = {
@@ -63,19 +66,26 @@ reveal_dataset = Reveal(data_dir, absolute_path=absolute_path,
 #                      max_epochs=args.n_epoch, n_class=reveal_dataset.n_class, gpus_per_trial=n_gpu,
 #                      input_channel=args.feat_dim)
 
+@click.command()
+@click.option('--mode', default='solo', help='Solo train or Tune params.')
+def run_mode(mode):
+    if mode == 'solo':
+        config = {
+            "num_layers": 3,
+            "dropout": 0.2,
+            "hidden_channels": 128,
+            "out_channels": 1,
+            "batch_size": 512,
+            "threshold": 0.5,
+        }
+        from vulexp.ml_models.helper import train_model, get_run_id
+        cwd = os.getcwd()
+        run_id = get_run_id()
+        store_path = os.path.join(cwd, 'solo_train', run_id)
 
-config = {
-    "num_layers": 2,
-    "dropout": 0.2,
-    "hidden_channels": 64,
-    "out_channels": 1,
-    "batch_size": 512,
-    "threshold": 0.5,
-}
-from vulexp.ml_models.helper import train_model, get_run_id
-cwd = os.getcwd()
-run_id = get_run_id()
-store_path = os.path.join(cwd, 'solo_train', run_id)
+        train_model(config, args.name, GIN, store_path, reveal_dataset, num_workers=8, num_epochs=args.n_epoch,
+                    input_channel=args.feat_dim, n_class=reveal_dataset.n_class)
 
-train_model(config, args.name, GIN, store_path, reveal_dataset, num_workers=8,
-            input_channel=args.feat_dim, n_class=reveal_dataset.n_class)
+
+if __name__ == '__main__':
+    run_mode()
