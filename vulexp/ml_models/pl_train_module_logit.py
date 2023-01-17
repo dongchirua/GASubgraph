@@ -146,7 +146,7 @@ class TrainingModule(LightningModule):
 
     @staticmethod
     def use_threshold(preds: list, targets: list, threshold):
-        y_hat = [1 if i > threshold else 0 > threshold for i in preds]
+        y_hat = [1 if i >= threshold else 0 for i in preds]
         f1 = f1_score(y_hat, targets, average='binary')
         return f1
 
