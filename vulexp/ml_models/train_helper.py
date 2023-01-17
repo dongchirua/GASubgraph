@@ -104,6 +104,9 @@ def tune_ashas_scheduler(config_grid, custom_nn_model, custom_dataset,
         parameter_columns=list(config_grid.keys()),
         metric_columns=["loss", "f1", "auc"])
 
+    # note: https://github.com/pytorch/pytorch/issues/66482
+    # num_workers must be = 1
+    # to kill zombie process: `ray stop --force`
     train_fn_with_parameters = tune.with_parameters(train_model,
                                                     num_workers=1, is_solo=False, name=name,
                                                     save_path=store_path,
@@ -125,7 +128,7 @@ def tune_ashas_scheduler(config_grid, custom_nn_model, custom_dataset,
                         local_dir=store_path,
                         progress_reporter=reporter,
                         keep_checkpoints_num=2,
-                        checkpoint_score_attr="min-val_loss",
+                        checkpoint_score_attr="min-loss",
                         name=name)
 
     print("Best hyperparameters found were: ", analysis.best_config)

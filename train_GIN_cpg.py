@@ -74,13 +74,13 @@ def run_mode(mode):
 
     if mode == 'tune':
         config = {
-            "num_layers": tune.randint(1, 5),
-            "dropout": tune.uniform(0.1, 0.4),
+            "num_layers": tune.choice([1, 2, 3, 5]),
+            "dropout": tune.choice([0.1, 0.2, 0.25, 0.34]),
             "hidden_channels": tune.choice([16, 32, 64, 128]),
             "batch_size": tune.choice([64, 128, 512, 1024]),
             "threshold": tune.choice([0.2, 0.5, 0.75]),
-            "learning_rate": tune.choice([1e-2, 1e-3, 3e-4, 4e-5]),
-            "weight_decay": tune.choice([1e-2, 1e-3, 3e-4, 4e-5]),
+            "learning_rate": tune.choice([1e-2, 1e-3, 4e-5]),
+            "weight_decay": tune.choice([1e-2, 1e-3, 4e-5]),
         }
         n_gpu = 1 if device.type == 'cuda' else 0
 
