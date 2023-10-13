@@ -1,0 +1,8 @@
+docker run --gpus all \
+    --env-file .env \
+    -it -d -v $PWD:/workspace \
+    -v /data:/data \
+    -p 8889:8888 \
+    --shm-size=200g --ulimit memlock=-1 --ulimit stack=67108864 \
+    --name GASubgraph \
+    pytorch/pytorch:1.11.0-cuda11.3-cudnn8-devel bash

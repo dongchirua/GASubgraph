@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score
-from linevul_helpers import clean_special_token_values, get_word_att_scores
+from .linevul_helpers import clean_special_token_values, get_word_att_scores
 
 def extract_line_attention(attentions, all_tokens):
     # attentions: a tuple with of one Tensor with 4D shape (batch_size, num_heads, sequence_length, sequence_length)
