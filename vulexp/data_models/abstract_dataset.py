@@ -12,7 +12,7 @@ from vulexp.data_processing.parse_data_point import joern_to_networkx
 
 from pytorch_lightning import LightningDataModule
 
-cwd = os.getcwd()
+cwd = '/workspace'
 w2v_path = os.path.join(cwd, 'data/Word2Vec/li_et_al_wv')
 
 type_map = {
