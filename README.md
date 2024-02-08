@@ -2,8 +2,8 @@
 genetic algorithm for Finding Subgraph
 
 ## Get started (Python version >= 3.9)
-    1a. (CPU) create env with command `conda create -f binder/environment.yml`
-    1b. (GPU) create env with command `conda create -f binder/environment-cu11.3.yml`
+    1a. (CPU) create env with command `conda env create -f binder/environment.yml`
+    1b. (GPU) create env with command `conda env create -f binder/environment-cu11.3.yml`
     2. activate env with `conda activate ga_subgraph`
     3. Download Reveal dataset: https://bit.ly/3bX30ai
     4. We flowed and used Joern which was provided along with Reveal paper at https://github.com/VulDetProject/ReVeal/blob/master/code-slicer/joern/README.md. Using Joern to parse data

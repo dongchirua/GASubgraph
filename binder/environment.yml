@@ -215,6 +215,7 @@ dependencies:
   - zipp=3.8.0=pyhd8ed1ab_0
   - zlib=1.2.12=hfe4f2af_2
   - zstd=1.5.2=ha9df2e0_2
+  - pip
   - pip:
     - absl-py==1.2.0
     - aiohttp==3.8.1
