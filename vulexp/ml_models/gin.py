@@ -7,18 +7,18 @@ from torch_geometric.nn import GINConv, global_max_pool
 
 class GIN(torch.nn.Module):
     def __init__(self,
-                 input_channel: int,
+                 in_channels: int,
                  hidden_channels: int,
                  num_layers: int,
                  out_channels: int = 1,
-                 dropout: float = 0.3, **kwargs):
+                 dropout: float = 0.5, **kwargs):
         super(GIN, self).__init__()
 
         self.dropout = dropout
 
         convs_list = [
             GINConv(nn.Sequential(
-                nn.Linear(input_channel, hidden_channels),
+                nn.Linear(in_channels, hidden_channels),
                 nn.ReLU(),
                 nn.Linear(hidden_channels, hidden_channels),
                 nn.ReLU())
