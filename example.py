@@ -25,6 +25,7 @@ class Args:
     to_undirected = True
     subgraph_building_method = "zero_filling"
     n_generation = 150
+    gtype = 'cpg'
 
 
 args = Args()
@@ -35,7 +36,7 @@ np.random.seed(args.seed)
 random.seed(args.seed)
 
 data_dir = 'data/reveal/'
-reveal_dataset = Reveal(data_dir, to_undirected=args.to_undirected, seed=args.seed)
+reveal_dataset = Reveal(data_dir, args.gtype, to_undirected=args.to_undirected, seed=args.seed)
 
 reveal_train, reveal_val, reveal_test = reveal_dataset.generate_train_test()
 
@@ -45,7 +46,7 @@ from vulexp.ml_models.pl_train_module_logit import TrainingModule
 from vulexp.ml_models.gin import GIN
 
 saved_model = TrainingModule.load_from_checkpoint(model=GIN, map_location=device,
-                                                  checkpoint_path="weights/undirected_graph_GIN_pretrain.ckpt")
+                                                  checkpoint_path="solo_train/202301171249_88cc311_add_click/checkpoint/GIN_CPG-epoch=04-loss=0.57-f1=0.29189189189189185.ckpt")
 saved_model.to(device)
 saved_model.eval()
 
