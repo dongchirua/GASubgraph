@@ -1,6 +1,21 @@
 ## GAVulExplainer
 genetic algorithm for Finding Subgraph
 
+```
+@article{GAVulExplainer,
+title = {Graph-based explainable vulnerability prediction},
+journal = {Information and Software Technology},
+pages = {107566},
+year = {2024},
+issn = {0950-5849},
+doi = {https://doi.org/10.1016/j.infsof.2024.107566},
+url = {https://www.sciencedirect.com/science/article/pii/S095058492400171X},
+author = {Hong Quy Nguyen and Thong Hoang and Hoa Khanh Dam and Aditya Ghose},
+keywords = {Graph neural network, Explanation, Vulnerability}
+}
+```
+
+
 ## Get started (Python version >= 3.9)
     1a. (CPU) create env with command `conda env create -f binder/environment.yml`
     1b. (GPU) create env with command `conda env create -f binder/environment-cu11.3.yml`
